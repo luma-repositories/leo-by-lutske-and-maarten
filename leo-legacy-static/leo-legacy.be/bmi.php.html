@@ -1,0 +1,163 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<link rel="shortcut icon" 	href="https://www.leo-legacy.be/favicon.ico" 	type="image/x-icon">
+<link rel="stylesheet" 		href="leo-legacy.css" 							type="text/css" />
+<meta name="author" 		content="leo-legacy">
+<meta name="resource-type" 	content="document"> 
+<meta name="distribution" 	content="LOCAL"> 
+<meta name="description" 	content="leo-legacy, een kooksite voor lekkerbekken">
+<meta HTTP-EQUIV="Reply-To" content="info@leo-legacy.be">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta HTTP-EQUIV="content-language" content="nl"">
+<title>leo-legacy</title>
+</head>
+<body>
+<div id="wrapper">
+  <div id="header">
+    <h1>leo-legacy.be</h1>
+    <h3><script>
+var mydate=new Date()
+var year=mydate.getYear()
+if (year < 1000)
+year+=1900
+var day=mydate.getDay()
+var month=mydate.getMonth()
+var daym=mydate.getDate()
+if (daym<10)
+daym="0"+daym
+var dayarray=new Array("zondag","maandag","dinsdag","woensdag","donderdag","vrijdag","zaterdag")
+var montharray=new Array("Januari","Februari","Maart","April","Mei","Juni","Juli","Augustus","September","Oktober","November","December")
+document.write(dayarray[day]+" "+daym+" "+montharray[month]+" "+year)
+</script></h3>
+  </div><SCRIPT language=JAVASCRIPT>
+
+function ClearForm(form){
+    form.weight.value = "";
+    form.height.value = "";
+    form.bmi.value = "";
+    form.my_comment.value = "";
+}
+
+function bmi(weight, height) {
+          bmindx=weight/eval(height*height);
+          return bmindx;
+}
+
+function checkform(form) {
+       if (form.weight.value==null||form.weight.value.length==0 ||form.height.value==null||form.height.value.length==0){
+            alert("\nVul het formulier eerst in");
+            return false;
+       }
+       else if (parseFloat(form.height.value) <= 0||
+                parseFloat(form.height.value) >=500||
+                parseFloat(form.weight.value) <= 0||
+                parseFloat(form.weight.value) >=500){
+                alert("\nIs dit wel juist ?? \nVul de gegevens nog eens in. \nGewicht in kilogram en \nlengte in cm");
+                ClearForm(form);
+                return false;
+       }
+       return true;
+}
+
+function computeform(form) {
+       if (checkform(form)) {
+       yourbmi=Math.round(bmi(form.weight.value, form.height.value/100));
+       form.bmi.value=yourbmi;
+       if (yourbmi >30) {
+          form.my_comment.value="U bent  obees. Obesitas is een vorm van overgewicht die de gezondheid in gevaar brengt ! Obesitas is een grote risicofactor voor gezondheidsproblemen zoals diabetes type II en hart- en vaataandoeningen. Bij de behandeling van obesitas kan naast een beperking van de energie-opname het opdrijven van de fysieke activiteiten een nuttige rol spelen. Onderzoek toont aan dat fysieke activiteiten vooral een reductie induceert van de vetmassa ter hoogte van de romp en buik, wat positief is gezien vooral de vetmassa ter hoogte van de romp en buik een risicofactor vormt voor hart- en vaatziekten. Een dagelijkse wandeling van 30 minuten tot 1 uur wordt ten zeerste aangeraden ";
+       }
+       else if (yourbmi >25 && yourbmi <=30) {
+          form.my_comment.value="U lijdt aan overgewicht. Dat betekent dat u teveel weegt volgens uw grootte. Overgewicht is een gevolg van een onevenwicht tussen de energieopname (te veel) en energieverbruik (te weinig) met een energieoverschot als gevolg dat onder de vorm van vetten wordt opgestapeld. Door uw energieopname te beperken (eet gezond !) en uw energieverbruik te verhogen (dagelijks minstens 30 minuten wandelen) kunt u het evenwicht makkelijkst terug herstellen. U bent nog niet obees (overgewicht met gezondheidsrisico's als gevolg) maar een gezondere leefwijze is aan te raden indien u uw gezondheid wenst te vrijwaren !";
+       }
+       else if (yourbmi >20 && yourbmi <=25) {
+          form.my_comment.value="U hebt een normaal, gezond gewicht ! Gezond eten en voldoende fysieke activiteit (dagelijks minstens 30 minuten) zal ervoor zorgen dat u uw gezond gewicht blijft behouden.";
+       }
+       else if (yourbmi >17 && yourbmi <=20) {
+          form.my_comment.value="U hebt een ondergewicht. U weegt te weinig volgens uw grootte. Voldoende energie-opname is noodzakelijk (te veel energieverbruik als oorzaak komt zelden tot nooit voor daar (te)veel energieverbruik  gepaard gaat met bijkomende spierontwikkeling wat het evenwicht hersteld). Eet gezond maar eet voldoende ! Wanneer uw gewicht nog daalt, brengt u uw gezondheid in gevaar !";
+       }
+       else if (yourbmi <=17) {
+          form.my_comment.value="U hebt een extreem ondergewicht (anorexia nervosa). Dit kan levensbedreigend zijn of worden !  U loopt het gevaar voor bloeddoorstromingsproblemen (steeds koud hebben) en een tekort aan kalium. Osteoporose wordt hier eveneens in de hand gewerkt. Een stijging van de energieopname is noodzakelijk ! U hebt nood aan gespecialiseerde hulp (dokter en diëtist). Een gezondere levenswijze is noodzakelijk om uw gewicht te vrijwaren.";
+       }
+}
+       return;
+}
+</SCRIPT>
+
+  <div class="p_beeld" id="pages"></div>
+  <div id="content">
+    <div id="posts">
+      <div class="post">
+        <h2 class="title">B.M.I. - Uw ideaal gewicht ?</h2>
+    	<p>Wat is BMI (body Mass Index)? -> Klik <a href="http://perswww.kuleuven.be/~u0000727/vermageren/varia/bmi.htm"target="blanck">hier</a>.<br> Vul uw gewicht en lengte in en klik op "Bereken mijn BMI".</p>
+
+<FORM name=BMI method=post>
+  <table border="0" cellpadding="0" cellspacing="2">
+   <tr>
+		<td><label>Gewicht (kg)</label></td>
+    	<td align="right"><INPUT onfocus="this.form.weight.value=''" name=weight></td>
+	</tr>
+		<td><label>Lengte (cm)</label></td>
+    	<td align="right"><INPUT onfocus="this.form.height.value=''" name=height></td>
+	</tr>
+    <tr>
+      	<td> </td>
+      	<td align="right">
+	  		<INPUT onclick=computeform(this.form) class=knop type=button value="Bereken BMI" name=button>
+      		<INPUT onclick=ClearForm(this.form) class=knop type=reset value="Reset" name=reset> 
+		</td>
+    </tr>
+	<tr>
+		<td><label>Uw BMI</label></td>
+    	<td align="right"><INPUT name=bmi></td>
+    <tr>
+      	<td>&nbsp;</td>
+      	<td align="right"><TEXTAREA name=my_comment></TEXTAREA></td>
+   </tr>
+</table>
+</FORM>
+    </div>
+    </div>
+    <div id="chef_img" >
+		<p><IMG id="fade-up-content" SRC="images/chef_r.gif"></p>
+    </div>
+<!-- eventueel begin van een search box voor later
+    <div id="search" class="boxed">
+      <h2 class="heading">Search</h2>
+      <div class="content">
+        <form method="get" action="#">
+          <div>
+            <input type="text" id="textfield1" name="textfield1" value="" size="18" />
+            <input type="submit" id="submit1" name="submit1" value="Go" />
+          </div>
+        </form>
+      </div>
+    </div>
+ -->
+ 
+    <div id="categories" class="boxed">
+      <h2 class="heading">Menu</h2>
+      <div class="content">
+        <ul>
+          <li class="menu"><a href="index.php.html">Startpagina</a></li>
+          <li class="menu"><a href="gastb_lezen.php.html">Gastenboek</a></li>
+          <li class="menu"><a href="links.php.html">Kooklinks</a></li>
+          <li class="menu"><a href="bmi.php.html">Uw BMI</a></li>
+          <li class="menu"><a href="recept.php.html">Uw Recept</a></li> 
+        </ul>
+      </div>
+    </div>
+    <div id="blogroll" class="boxed">
+      <h2 class="heading">Receptenboek</h2>
+      <div class="content">
+        <ul>
+<li class="menu"><a href="rcpt_menu.php%3Ftop.html" >TOP 10 meest bekeken</a></li><li class="menu"><a href="rcpt_menu.php%3FAziatisch.html">Aziatisch (4)</a></li><li class="menu"><a href="rcpt_menu.php%3FDranken.html">Dranken (2)</a></li><li class="menu"><a href="rcpt_menu.php%3FGebak.html">Gebak (12)</a></li><li class="menu"><a href="rcpt_menu.php%3FGevogelte.html">Gevogelte (6)</a></li><li class="menu"><a href="rcpt_menu.php%3FHapjes.html">Hapjes (1)</a></li><li class="menu"><a href="rcpt_menu.php%3FKindergerechten.html">Kindergerechten (11)</a></li><li class="menu"><a href="rcpt_menu.php%3FNagerechten.html">Nagerechten (7)</a></li><li class="menu"><a href="rcpt_menu.php%3FPaddestoelen.html">Paddestoelen (17)</a></li><li class="menu"><a href="rcpt_menu.php%3FPastas.html">Pastas (8)</a></li><li class="menu"><a href="rcpt_menu.php%3FSoepen.html">Soepen (16)</a></li><li class="menu"><a href="rcpt_menu.php%3FVegetarisch.html">Vegetarisch (1)</a></li><li class="menu"><a href="rcpt_menu.php%3FVisgerechten.html">Visgerechten (7)</a></li><li class="menu"><a href="rcpt_menu.php%3FVleesgerechten.html">Vleesgerechten (11)</a></li><li class="menu"><a href="rcpt_menu.php%3FVoorgerechten.html">Voorgerechten (3)</a></li>        </ul>
+      </div>
+    </div>
+  </div>
+  <div id="footer">
+    <p>scraped content</p>
+  </div>
+</div>
+</body>
+</html>
