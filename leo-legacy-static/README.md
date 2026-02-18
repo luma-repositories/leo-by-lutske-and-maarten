@@ -34,8 +34,8 @@ Then visit: http://localhost:8000
 ## Structure
 
 - `index.html` - Homepage
-- `rcpt_menu.php?*.html` - Recipe category pages
-- `menu_detail.php?id=*.html` - Individual recipe pages
+- `rcpt_menu_*.html` - Recipe category pages
+- `menu_detail_id_*.html` - Individual recipe pages
 - `bmi.php.html` - BMI calculator
 - `links.php.html` - Cooking links
 - `gastb_lezen.php.html` - Guest book
@@ -44,6 +44,6 @@ Then visit: http://localhost:8000
 
 ## Notes
 
-- All PHP pages have been saved as .html files with converted links
+- Query-style filenames were normalized for cross-platform compatibility (`.php?id=` -> `_id_`, `.php?` -> `_`, spaces -> `_`)
 - All resources (CSS, images) are included and links have been updated
 - The site is fully functional as a static website
