@@ -1,0 +1,19 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "ollama": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "http://localhost:11434/v1"
+      },
+      "models": {
+//        "granite-code:8b-instruct": {
+//          "tools": true
+//        }
+        "qwen2.5-coder:14b-instruct": {
+          "tools": true
+        }
+      }
+    }
+  }
+}
