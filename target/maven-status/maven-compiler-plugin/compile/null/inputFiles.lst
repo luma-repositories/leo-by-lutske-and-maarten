@@ -1,0 +1,6 @@
+/Users/maartenvandeperre/workspace/lutske/leo-by-lutske-and-maarten/src/main/java/be/lutske/leolegacy/infrastructure/config/ApplicationPropertiesVersionConfigAdapter.java
+/Users/maartenvandeperre/workspace/lutske/leo-by-lutske-and-maarten/src/main/java/be/lutske/leolegacy/domain/AppVersion.java
+/Users/maartenvandeperre/workspace/lutske/leo-by-lutske-and-maarten/src/main/java/be/lutske/leolegacy/interfaceadapter/rest/VersionResource.java
+/Users/maartenvandeperre/workspace/lutske/leo-by-lutske-and-maarten/src/main/java/be/lutske/leolegacy/application/port/VersionConfigPort.java
+/Users/maartenvandeperre/workspace/lutske/leo-by-lutske-and-maarten/src/main/java/be/lutske/leolegacy/interfaceadapter/rest/VersionResponse.java
+/Users/maartenvandeperre/workspace/lutske/leo-by-lutske-and-maarten/src/main/java/be/lutske/leolegacy/application/usecase/GetCurrentVersionUseCase.java

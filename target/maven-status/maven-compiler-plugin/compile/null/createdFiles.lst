@@ -1,0 +1,6 @@
+be/lutske/leolegacy/infrastructure/config/ApplicationPropertiesVersionConfigAdapter.class
+be/lutske/leolegacy/interfaceadapter/rest/VersionResource.class
+be/lutske/leolegacy/interfaceadapter/rest/VersionResponse.class
+be/lutske/leolegacy/application/port/VersionConfigPort.class
+be/lutske/leolegacy/domain/AppVersion.class
+be/lutske/leolegacy/application/usecase/GetCurrentVersionUseCase.class
