@@ -1,0 +1,23 @@
+:root {
+  --italy-green: #1f8a4c;
+  --italy-green-soft: #e7f6ed;
+  --italy-red: #c7373a;
+  --italy-red-soft: #fceced;
+  --surface: #ffffff;
+  --surface-muted: #f8f8f8;
+  --text: #1f1f1f;
+  --text-muted: #666666;
+  --border: #e6e6e6;
+  --shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  color: var(--text);
+  background: linear-gradient(160deg, #fbfffc 0%, #f6f6f6 55%, #fff8f8 100%);
+}

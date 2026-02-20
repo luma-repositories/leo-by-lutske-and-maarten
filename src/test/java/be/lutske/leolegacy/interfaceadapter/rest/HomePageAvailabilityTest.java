@@ -15,6 +15,6 @@ class HomePageAvailabilityTest {
                 .when().get("/")
                 .then()
                 .statusCode(200)
-                .body(containsString("leo-legacy.be"));
+                .body(containsString("Leo Legacy Recepten"));
     }
 }
