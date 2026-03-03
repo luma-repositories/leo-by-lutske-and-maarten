@@ -1,7 +1,9 @@
 package be.lutske.leolegacy.infrastructure.persistence;
 
 import be.lutske.leolegacy.application.port.RecipeQueryPort;
+import be.lutske.leolegacy.application.port.RecipeCommandPort;
 import be.lutske.leolegacy.domain.Category;
+import be.lutske.leolegacy.domain.ProposedRecipe;
 import be.lutske.leolegacy.domain.RecipeDetail;
 import be.lutske.leolegacy.domain.RecipeSummary;
 import be.lutske.leolegacy.infrastructure.persistence.entity.CategoryEntity;
@@ -11,12 +13,14 @@ import be.lutske.leolegacy.infrastructure.persistence.repository.RecipePanacheRe
 import io.quarkus.panache.common.Sort;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.transaction.Transactional;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class RecipeQueryAdapter implements RecipeQueryPort {
+public class RecipeQueryAdapter implements RecipeQueryPort, RecipeCommandPort {
 
     private final RecipePanacheRepository recipeRepository;
     private final CategoryPanacheRepository categoryRepository;
@@ -67,10 +71,61 @@ public class RecipeQueryAdapter implements RecipeQueryPort {
                         recipe.legacyId,
                         recipe.title,
                         recipe.category.name,
+                        recipe.description,
+                        recipe.servings,
                         recipe.ingredients,
                         recipe.preparation,
-                        recipe.pdfSlug
+                        recipe.pdfSlug,
+                        recipe.tags,
+                        recipe.source
                 ));
+    }
+
+    @Override
+    @Transactional
+    public RecipeDetail createImportedRecipe(ProposedRecipe proposedRecipe, String rawText, String notes) {
+        CategoryEntity importedCategory = categoryRepository.find("slug", "imported")
+                .firstResultOptional()
+                .orElseGet(this::createImportedCategory);
+
+        RecipeEntity entity = new RecipeEntity();
+        entity.legacyId = null;
+        entity.title = proposedRecipe.title();
+        entity.description = proposedRecipe.description();
+        entity.servings = proposedRecipe.servings();
+        entity.ingredients = proposedRecipe.ingredients();
+        entity.preparation = proposedRecipe.instructions();
+        entity.tags = proposedRecipe.tags();
+        entity.source = proposedRecipe.source();
+        entity.ocrRawText = rawText;
+        entity.importNotes = notes;
+        entity.category = importedCategory;
+        entity.createdAt = LocalDateTime.now();
+
+        recipeRepository.persist(entity);
+
+        return new RecipeDetail(
+                entity.id,
+                entity.legacyId,
+                entity.title,
+                entity.category.name,
+                entity.description,
+                entity.servings,
+                entity.ingredients,
+                entity.preparation,
+                entity.pdfSlug,
+                entity.tags,
+                entity.source
+        );
+    }
+
+    private CategoryEntity createImportedCategory() {
+        CategoryEntity category = new CategoryEntity();
+        category.slug = "imported";
+        category.name = "Imported";
+        category.displayOrder = 1000;
+        categoryRepository.persist(category);
+        return category;
     }
 
     private String toExcerpt(String preparation) {

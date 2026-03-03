@@ -10,7 +10,9 @@ vi.mock('../api/client', () => ({
     getVersion: vi.fn(),
     listCategories: vi.fn(),
     listRecipes: vi.fn(),
-    getRecipe: vi.fn()
+    getRecipe: vi.fn(),
+    importRecipe: vi.fn(),
+    confirmImportedRecipe: vi.fn()
   }
 }));
 

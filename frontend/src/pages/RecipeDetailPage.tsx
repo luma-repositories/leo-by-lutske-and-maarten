@@ -41,6 +41,9 @@ export function RecipeDetailPage() {
       <h2 className="detail-title" id="recipe-detail-title">{recipe.title}</h2>
       <p className="detail-category" id="recipe-detail-category">{recipe.category}</p>
 
+      {recipe.description && <p className="detail-description" id="recipe-detail-description">{recipe.description}</p>}
+      {recipe.servings && <p className="detail-servings" id="recipe-detail-servings">{nl.servings}: {recipe.servings}</p>}
+
       <article className="detail-block" id="recipe-detail-ingredients-block">
         <h3>{nl.ingredients}</h3>
         <p id="recipe-detail-ingredients">{recipe.ingredients}</p>
@@ -52,8 +55,10 @@ export function RecipeDetailPage() {
       </article>
 
       <p className="detail-meta" id="recipe-detail-legacy-ref">
-        {nl.sourceRef}: {recipe.legacyId}
+        {nl.sourceRef}: {recipe.legacyId ?? '-'}
       </p>
+      {recipe.source && <p className="detail-meta" id="recipe-detail-source">{nl.source}: {recipe.source}</p>}
+      {recipe.tags && <p className="detail-meta" id="recipe-detail-tags">{nl.tags}: {recipe.tags}</p>}
     </section>
   );
 }

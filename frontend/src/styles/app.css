@@ -52,6 +52,23 @@
   margin: 0 0 14px;
 }
 
+.recipes-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.import-link {
+  border: 1px solid var(--italy-green);
+  border-radius: 999px;
+  padding: 8px 12px;
+  text-decoration: none;
+  color: var(--italy-green);
+  background: #ffffff;
+}
+
 .category-pill {
   width: 100%;
   border: 1px solid var(--border);
@@ -127,6 +144,72 @@
   color: var(--italy-red);
   padding: 8px 12px;
   cursor: pointer;
+}
+
+.import-page {
+  display: grid;
+  gap: 12px;
+}
+
+.import-upload-form,
+.import-confirm-form {
+  display: grid;
+  gap: 8px;
+}
+
+.import-label {
+  font-weight: 600;
+}
+
+.import-file-input,
+.import-input,
+.import-textarea {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  font: inherit;
+}
+
+.import-submit-button,
+.import-confirm-button {
+  justify-self: start;
+  border: 1px solid var(--italy-green);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--italy-green);
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.import-preview {
+  max-width: min(360px, 100%);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.import-error {
+  color: #8a1e2a;
+}
+
+.import-success {
+  color: #155f34;
+}
+
+.import-needs-info {
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.import-warnings {
+  background: #fff7e9;
+  border: 1px solid #ead7a1;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.import-warning-item {
+  margin: 4px 0;
 }
 
 .back-link {

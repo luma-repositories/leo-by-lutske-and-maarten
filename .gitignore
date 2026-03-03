@@ -2,6 +2,8 @@
 .claude
 .vscode/
 .DS_Store
+.project
+.classpath
 
 # Compiled class file
 *.class

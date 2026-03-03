@@ -1,15 +1,11 @@
 package be.lutske.leolegacy.domain;
 
-public record RecipeDetail(
-        Long id,
-        Integer legacyId,
+public record ProposedRecipe(
         String title,
-        String category,
         String description,
         Integer servings,
         String ingredients,
-        String preparation,
-        String pdfSlug,
+        String instructions,
         String tags,
         String source
 ) {

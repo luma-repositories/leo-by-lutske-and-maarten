@@ -1,16 +1,13 @@
 package be.lutske.leolegacy.interfaceadapter.rest;
 
-public record RecipeDetailResponse(
-        Long id,
-        Integer legacyId,
+public record UserOverridesPayload(
         String title,
-        String category,
         String description,
         Integer servings,
         String ingredients,
-        String preparation,
-        String pdfSlug,
+        String instructions,
         String tags,
-        String source
+        String source,
+        String notes
 ) {
 }

@@ -57,7 +57,10 @@ export function RecipesListPage() {
       </aside>
 
       <section className="content" id="recipes-content">
-        <h2 className="section-title" id="recipes-title">{nl.recipes}</h2>
+        <div className="recipes-title-row" id="recipes-title-row">
+          <h2 className="section-title" id="recipes-title">{nl.recipes}</h2>
+          <Link className="import-link" id="recipes-import-link" to="/recipes/import">{nl.importRecipe}</Link>
+        </div>
         {loading ? (
           <p id="recipes-loading">{nl.loading}</p>
         ) : hasLoadError ? (

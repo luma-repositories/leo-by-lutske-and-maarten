@@ -29,6 +29,16 @@ Legacy HTML recipe data is migrated to SQL seeds using Flyway migrations.
   - Optional query: `?category=<slug>`
 - `GET /api/recipes/{id}`
   - Response: `{ id, legacyId, title, category, ingredients, preparation, pdfSlug }`
+- `POST /api/recipes/import`
+  - Content-Type: `multipart/form-data`
+  - Form field: `file`
+  - `201 Created`: full recipe DTO
+  - `422 Unprocessable Entity`: `{ status: "NEEDS_MORE_INFO", rawText, proposedRecipe, missingFields, parseWarnings }`
+- `POST /api/recipes/import/confirm`
+  - Content-Type: `application/json`
+  - Body: `{ rawText, proposedRecipe, userOverrides }`
+  - `201 Created`: full recipe DTO
+  - `422 Unprocessable Entity`: same needs-more-info structure
 
 ## Getting started
 
@@ -50,6 +60,22 @@ podman compose down -v   # reset DB (drop volume/data)
 
 ```bash
 ./mvnw quarkus:dev
+```
+
+OCR prerequisite (Tess4J runtime):
+
+```bash
+brew install tesseract
+export DYLD_LIBRARY_PATH="$(brew --prefix)/lib:$DYLD_LIBRARY_PATH"
+export TESSDATA_PREFIX="$(brew --prefix tesseract)/share/tessdata"
+```
+
+Optional OCR environment settings:
+
+```bash
+export APP_IMPORT_OCR_LANGUAGE=eng
+export APP_IMPORT_MAX_FILE_SIZE_BYTES=8388608
+export APP_IMPORT_OCR_STUB_TEXT="" # optional: test OCR flow without native tesseract
 ```
 
 Backend URLs:
@@ -105,6 +131,7 @@ Open:
 
 - `src/main/resources/db/migration/V1__init.sql`
 - `src/main/resources/db/migration/V2__seed.sql`
+- `src/main/resources/db/migration/V3__add_recipe_import_support.sql`
 
 Flyway runs automatically at startup.
 
@@ -130,3 +157,18 @@ unset QUARKUS_PROFILE QUARKUS_DATASOURCE_DB_KIND QUARKUS_DATASOURCE_JDBC_URL QUA
 ```
 
 - If the UI shows a recipes load error, check backend availability at `http://localhost:8080/api/recipes` and database container status (`podman compose ps`).
+- If OCR import fails, verify Tesseract is installed and `TESSDATA_PREFIX` points to a directory containing `eng.traineddata`.
+- On macOS, if upload returns `OCR runtime unavailable` or logs `Unable to load library 'tesseract'`, export `DYLD_LIBRARY_PATH="$(brew --prefix)/lib:$DYLD_LIBRARY_PATH"` in the same shell before starting Quarkus.
+- For frontend-only flow testing without native OCR, set `APP_IMPORT_OCR_STUB_TEXT="Scanned recipe"` before starting Quarkus.
+- Missing OCR environment variables no longer block Quarkus startup; OCR properties now use safe runtime fallbacks.
+
+## Manual import verification
+
+1. `podman compose up -d`
+2. `./mvnw quarkus:dev`
+3. `cd frontend && npm run dev`
+4. Open `http://localhost:5173/recipes/import`
+5. Upload a clear recipe image and verify you are redirected to recipe detail.
+6. Upload a messy image and verify the follow-up form appears with OCR raw text and warnings.
+7. Complete missing fields, click confirm, and verify the recipe is created.
+8. Restart services and verify imported recipes remain available.

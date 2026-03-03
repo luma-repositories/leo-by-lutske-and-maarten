@@ -19,7 +19,7 @@ public class RecipeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;
 
-    @Column(name = "legacy_id", nullable = false, unique = true)
+    @Column(name = "legacy_id", unique = true)
     public Integer legacyId;
 
     @Column(nullable = false, length = 255)
@@ -37,6 +37,24 @@ public class RecipeEntity {
 
     @Column(name = "pdf_slug", length = 255)
     public String pdfSlug;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    public String description;
+
+    @Column(name = "servings")
+    public Integer servings;
+
+    @Column(name = "source", length = 255)
+    public String source;
+
+    @Column(name = "tags", columnDefinition = "TEXT")
+    public String tags;
+
+    @Column(name = "ocr_raw_text", columnDefinition = "TEXT")
+    public String ocrRawText;
+
+    @Column(name = "import_notes", columnDefinition = "TEXT")
+    public String importNotes;
 
     @Column(name = "created_at", nullable = false)
     public LocalDateTime createdAt;

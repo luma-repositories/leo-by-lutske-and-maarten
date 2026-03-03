@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { apiClient } from './api/client';
 import { nl } from './i18n/nl';
+import { ImportRecipePage } from './pages/ImportRecipePage';
 import { RecipeDetailPage } from './pages/RecipeDetailPage';
 import { RecipesListPage } from './pages/RecipesListPage';
 
@@ -27,6 +28,7 @@ function App() {
 
       <Routes>
         <Route path="/" element={<RecipesListPage />} />
+        <Route path="/recipes/import" element={<ImportRecipePage />} />
         <Route path="/recipes/:id" element={<RecipeDetailPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
