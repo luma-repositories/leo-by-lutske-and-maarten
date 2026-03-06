@@ -27,27 +27,6 @@ You are in **Full-Stack Developer (2-Gate) mode** for a **Kotlin + ReactJS + Qua
 - **Frontend**: ReactJS (TypeScript preferred if repo uses it) & add labels (id and classes) on all elements, so that they could be used in end-to-end tests
 - **Internationalization**: Add or extend **i18n** for new user-facing strings
 
-## Architecture (Clean Architecture mandatory)
-Both frontend and backend must follow a **Clean Architecture** approach:
-- Clear separation of concerns
-- Dependency direction points inward
-- Interfaces/adapters at boundaries
-- Framework/runtime details isolated from core domain
-
-### Backend Clean Architecture expectations
-- **Domain**: entities, value objects, domain services (no Quarkus imports)
-- **Application**: use-cases/interactors, ports (interfaces), DTOs (framework-free)
-- **Infrastructure**: persistence, external clients, messaging, implementations of ports
-- **Interface/Delivery**: REST endpoints/controllers, request/response mapping, auth, validation wiring
-- Ensure dependency flow: interface/delivery + infrastructure depend on application/domain, never the other way around.
-
-### Frontend Clean Architecture expectations
-- **Domain**: domain models, pure business rules, policy/validators (no React imports)
-- **Application**: use-cases, state orchestration, ports (API interfaces), mapping
-- **Infrastructure**: HTTP client implementations, storage implementations, i18n provider integration
-- **UI/Presentation**: React components, hooks, routing, view models
-- Ensure UI depends on application/domain; domain never depends on UI libraries.
-
 ## Dependency management (Gradle platform folder mandatory)
 - Use a **`platform/`** folder containing **`quarkus-platform.gradle`**
 - **All dependency versions must be declared in `platform/quarkus-platform.gradle`**
@@ -91,7 +70,6 @@ Output:
 
 3) **Implementation plan (one go)**
    Include:
-    - Clean Architecture mapping (frontend + backend) and where each concern will live
     - Files/modules likely impacted (frontend, backend, shared)
     - API/data contract changes (if any)
     - i18n approach (library/config + where strings go)
@@ -120,22 +98,8 @@ Only after explicit approval:
 # Execution procedure in Gate 2 (must follow)
 1) **Repository scan**
 - Confirm structure (Quarkus module(s), React app location, Gradle settings, presence of `platform/quarkus-platform.gradle`)
-- Identify existing Clean Architecture conventions (if present) and align
 - Identify test frameworks and i18n setup (or introduce one if missing)
 - Verify dependency version governance is centralized in the platform file
-
-2) **Implement feature end-to-end (Clean Architecture)**
-- Backend (Kotlin + Quarkus):
-    - Domain + application use-cases first
-    - Ports in application layer
-    - Adapters (REST + persistence) in delivery/infrastructure
-    - Mapping at boundaries; keep domain pure
-- Frontend (React):
-    - Domain models + application use-cases
-    - Ports for API access
-    - Infrastructure adapters for HTTP/i18n/storage
-    - UI components consume application layer; keep UI thin
-- i18n: all new user-facing strings moved into translation files
 
 3) **Dependency management**
 - Add/align dependency versions in `platform/quarkus-platform.gradle`
@@ -174,7 +138,6 @@ Only after explicit approval:
 - **Release note created** (path + filename)
 - **Commands run** (exact commands) + outcomes summary
 - **Test coverage mapping** (new behaviors → tests)
-- **Clean Architecture compliance note** (how layers/ports/adapters were applied)
 - **Follow-ups** (only if truly necessary)
 
 # Behavior rules
