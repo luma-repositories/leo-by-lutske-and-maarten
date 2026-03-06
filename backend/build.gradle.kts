@@ -4,6 +4,7 @@ apply(from = "${rootProject.projectDir}/platform/quarkus-platform.gradle")
 plugins {
     kotlin("jvm") version "2.0.21"
     kotlin("plugin.allopen") version "2.0.21"
+    kotlin("plugin.jpa") version "2.0.21"
     id("io.quarkus")
 }
 
@@ -25,9 +26,15 @@ dependencies {
     implementation(libs["quarkusArc"]!!)
     implementation(libs["quarkusKotlin"]!!)
 
+    // Database
+    implementation(libs["quarkusHibernateOrm"]!!)
+    implementation(libs["quarkusJdbcPostgresql"]!!)
+    implementation(libs["quarkusFlyway"]!!)
+
     // Testing
     testImplementation(libs["quarkusJunit5"]!!)
     testImplementation(libs["restAssured"]!!)
+    testImplementation(libs["quarkusTestH2"]!!)
 }
 
 group = "be.lutske"

@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: docker.io/library/postgres:17-alpine
+    container_name: leo-legacy-postgres
+    environment:
+      POSTGRES_DB: leo_legacy
+      POSTGRES_USER: leo
+      POSTGRES_PASSWORD: leo_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - leo-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U leo -d leo_legacy"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  leo-pg-data:

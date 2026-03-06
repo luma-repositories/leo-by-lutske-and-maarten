@@ -1,0 +1,117 @@
+.detail-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: var(--space-xl);
+}
+
+.detail-page__loading,
+.detail-page__error {
+  color: var(--color-text-muted);
+  font-style: italic;
+  text-align: center;
+  padding: var(--space-2xl);
+}
+
+.detail-page__back {
+  display: inline-block;
+  margin-bottom: var(--space-lg);
+  font-size: 0.9rem;
+  color: var(--color-green);
+  font-weight: 500;
+}
+
+.detail-page__back:hover {
+  color: var(--color-green-dark);
+}
+
+/* --- Detail card --- */
+
+.detail-card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border);
+}
+
+.detail-card__accent {
+  height: 6px;
+  background: linear-gradient(90deg, var(--color-green) 33%, var(--color-white) 33%, var(--color-white) 66%, var(--color-red) 66%);
+}
+
+.detail-card__body {
+  padding: var(--space-xl) var(--space-2xl);
+}
+
+.detail-card__header {
+  margin-bottom: var(--space-xl);
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.detail-card__title {
+  font-size: 2rem;
+  color: var(--color-green-dark);
+  margin-bottom: var(--space-sm);
+}
+
+.detail-card__category {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--color-white);
+  background-color: var(--color-green);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+/* --- Sections --- */
+
+.detail-card__section {
+  margin-bottom: var(--space-xl);
+}
+
+.detail-card__section-title {
+  font-size: 1.2rem;
+  color: var(--color-accent);
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-xs);
+  border-bottom: 2px solid var(--color-red-subtle);
+}
+
+.detail-card__ingredients {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-xs);
+}
+
+.detail-card__ingredient {
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--color-green-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  border-left: 3px solid var(--color-green-light);
+}
+
+.detail-card__preparation {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--color-gray-800);
+}
+
+/* --- Responsive --- */
+
+@media (max-width: 600px) {
+  .detail-card__body {
+    padding: var(--space-lg);
+  }
+
+  .detail-card__title {
+    font-size: 1.5rem;
+  }
+
+  .detail-card__ingredients {
+    grid-template-columns: 1fr;
+  }
+}

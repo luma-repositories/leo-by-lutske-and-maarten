@@ -1,10 +1,12 @@
-# leo-by-lutske-and-maarten
+# Leo Legacy Recepten
 
-A Quarkus application serving the legacy leo-legacy.be recipe website as static assets, with a REST API backend.
+A full-stack recipe application migrating the legacy leo-legacy.be cooking website into a modern Kotlin + Quarkus backend with a React (TypeScript) frontend.
 
 ## Prerequisites
 
 - Java 21+
+- Node.js 18+ and npm
+- Podman (or Docker) for local PostgreSQL
 - No global Gradle installation needed (uses Gradle wrapper)
 
 ## Project Structure
@@ -15,75 +17,142 @@ A Quarkus application serving the legacy leo-legacy.be recipe website as static 
 ├── gradle.properties                             # Gradle/Quarkus properties
 ├── platform/
 │   └── quarkus-platform.gradle                   # Centralized dependency versions
+├── compose.yaml                                  # PostgreSQL 17 (Podman/Docker Compose)
 ├── backend/
-│   ├── build.gradle.kts                          # Backend build file (Quarkus)
+│   ├── build.gradle.kts                          # Backend build file (Quarkus + JPA)
 │   └── src/
 │       ├── main/
-│       │   ├── kotlin/be/lutske/leolegacy/       # Kotlin backend sources
+│       │   ├── kotlin/be/lutske/leolegacy/
+│       │   │   ├── infrastructure/persistence/
+│       │   │   │   ├── entity/                   # JPA entities (Category, Recipe)
+│       │   │   │   └── repository/               # Panache repositories
 │       │   │   └── interfaceadapter/rest/
-│       │   │       ├── VersionResource.kt        # GET /api/version endpoint
-│       │   │       └── VersionResponse.kt        # Response DTO
+│       │   │       ├── CategoryResource.kt       # GET /api/categories
+│       │   │       ├── RecipeResource.kt         # GET /api/recipes, /api/recipes/top, /api/recipes/{id}
+│       │   │       ├── VersionResource.kt        # GET /api/version
+│       │   │       └── *Response.kt              # REST DTOs
 │       │   └── resources/
-│       │       ├── application.properties        # Quarkus + app configuration
-│       │       └── META-INF/resources/           # Static website (served at /)
-│       │           ├── index.html                # Homepage
-│       │           ├── leo-legacy.css            # Stylesheet
-│       │           ├── images/                   # Site images
-│       │           └── ...                       # Recipe pages, menus, etc.
+│       │       ├── application.properties        # Quarkus + datasource config
+│       │       └── db/migration/
+│       │           ├── V1__init.sql              # Schema (categories + recipes)
+│       │           └── V2__seed.sql              # Seed data (14 categories, 106 recipes)
 │       └── test/
-│           └── kotlin/be/lutske/leolegacy/       # Test sources
-│               └── interfaceadapter/rest/
-│                   ├── VersionResourceTest.kt    # API endpoint tests
-│                   └── HomePageAvailabilityTest.kt # Static site serving tests
+│           ├── kotlin/be/lutske/leolegacy/       # Backend tests (H2 in-memory)
+│           └── resources/application.properties  # H2 test config
+├── frontend/
+│   ├── package.json                              # Vite + React + TypeScript
+│   ├── vite.config.ts                            # Dev proxy /api -> localhost:8080
+│   └── src/
+│       ├── main.tsx                              # App entry point
+│       ├── App.tsx                               # Layout (Header + Routes + Footer)
+│       ├── theme.css                             # Italian color palette (green/white/red)
+│       ├── api/client.ts                         # API types + fetch helpers
+│       ├── components/                           # Header, Footer, CategorySidebar
+│       └── pages/                                # HomePage, RecipeDetailPage
+├── release-notes/                                # Release notes per change
 └── leo-legacy-static/                            # Original static site (reference)
 ```
 
-## How to Run
+## How to Run (Development)
 
-### Development Mode (live reload)
+### 1. Start PostgreSQL
+
+```bash
+podman compose up -d
+```
+
+This starts a PostgreSQL 17 container on port 5432 with persistent volume.
+
+### 2. Start the Backend
 
 ```bash
 ./gradlew :backend:quarkusDev
 ```
 
-Then open:
-- Homepage: [http://localhost:8080/](http://localhost:8080/)
-- Version API: [http://localhost:8080/api/version](http://localhost:8080/api/version)
+The Quarkus backend starts on [http://localhost:8080](http://localhost:8080) with live reload. Flyway automatically runs database migrations on startup.
 
-### Build & Run Packaged
+### 3. Start the Frontend
 
 ```bash
-./gradlew :backend:build
-java -jar backend/build/quarkus-app/quarkus-run.jar
+cd frontend
+npm install    # first time only
+npm run dev
 ```
 
-### Run Tests Only
+The Vite dev server starts on [http://localhost:3000](http://localhost:3000) and proxies `/api` requests to the backend.
+
+## Build & Test
+
+### Backend
 
 ```bash
-./gradlew :backend:test
+./gradlew :backend:build    # compile + test + package
+./gradlew :backend:test     # tests only (uses H2 in-memory, no Docker needed)
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm run build    # TypeScript check + Vite production build
+npm run lint     # ESLint
 ```
 
 ## API Endpoints
 
-| Method | Path           | Description                          |
-|--------|----------------|--------------------------------------|
-| GET    | `/`            | Homepage (static HTML)               |
-| GET    | `/api/version` | Returns app version as JSON          |
+| Method | Path                | Description                                    |
+|--------|---------------------|------------------------------------------------|
+| GET    | `/api/version`      | Application version as JSON                    |
+| GET    | `/api/categories`   | All categories with recipe counts              |
+| GET    | `/api/recipes`      | All recipes (optional `?categoryId=N` filter)  |
+| GET    | `/api/recipes/top`  | Top 10 most-viewed recipes                     |
+| GET    | `/api/recipes/{id}` | Full recipe detail (ingredients + preparation) |
 
-### Example: GET /api/version
+### Example: GET /api/categories
+
+```json
+[
+  { "id": 1, "name": "Aperitief hapjes", "recipeCount": 12 },
+  { "id": 2, "name": "Soepen", "recipeCount": 8 }
+]
+```
+
+### Example: GET /api/recipes/1
 
 ```json
 {
-  "version": "1.2.3"
+  "id": 1,
+  "title": "Gevulde champignons",
+  "ingredients": ["250 g champignons", "100 g roomkaas", "..."],
+  "preparation": "Verwarm de oven op 200 graden...",
+  "categoryId": 1,
+  "categoryName": "Aperitief hapjes",
+  "viewCount": 1234
 }
 ```
 
-The version value is configured in `backend/src/main/resources/application.properties` via the `app.version` property.
+## Database
+
+- **PostgreSQL 17** in development (via Podman Compose)
+- **H2 in-memory** (PostgreSQL compatibility mode) for tests
+- **Flyway** manages schema migrations in `backend/src/main/resources/db/migration/`
+- 14 categories and 106 recipes seeded from the original static site
 
 ## Configuration
 
-Key application properties (in `backend/src/main/resources/application.properties`):
+Key application properties (`backend/src/main/resources/application.properties`):
 
-| Property      | Default | Description                        |
-|---------------|---------|------------------------------------|
-| `app.version` | `1.2.3` | Application version shown on site  |
+| Property                              | Default                                          | Description                |
+|---------------------------------------|--------------------------------------------------|----------------------------|
+| `app.version`                         | `1.2.3`                                          | Application version        |
+| `quarkus.datasource.jdbc.url`         | `jdbc:postgresql://localhost:5432/leo_legacy`     | Database connection URL    |
+| `quarkus.datasource.username`         | `leo`                                            | Database username          |
+| `quarkus.datasource.password`         | `leo`                                            | Database password          |
+| `quarkus.flyway.migrate-at-start`     | `true`                                           | Auto-run migrations        |
+
+## Tech Stack
+
+- **Backend**: Kotlin 2.0.21, Quarkus 3.17.7, Hibernate ORM Panache, Flyway, PostgreSQL
+- **Frontend**: React 19, TypeScript 5.9, Vite 7, React Router 7
+- **Build**: Gradle 8.12 (wrapper), npm
+- **Infrastructure**: Podman Compose, PostgreSQL 17

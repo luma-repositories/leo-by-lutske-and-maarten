@@ -2,58 +2,60 @@ package be.lutske.leolegacy.interfaceadapter.rest
 
 import io.quarkus.test.junit.QuarkusTest
 import io.restassured.RestAssured.given
-import org.hamcrest.CoreMatchers.containsString
+import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.Matchers.greaterThanOrEqualTo
+import org.hamcrest.Matchers.notNullValue
 import org.junit.jupiter.api.Test
 
 /**
- * Integration test verifying the static homepage is served by Quarkus.
+ * Integration test verifying the core API endpoints are available and healthy.
  *
- * Verifies that:
- * - GET / returns HTTP 200
- * - The response contains expected HTML content from the legacy site
- * - jQuery script tag is present (for version fetching)
- * - The version placeholder element is present
+ * Replaces the old static-site availability tests now that the frontend
+ * is a separate React application and the legacy HTML files have been removed.
  */
 @QuarkusTest
 class HomePageAvailabilityTest {
 
     @Test
-    fun `GET root returns 200 with HTML content`() {
+    fun `GET api-version returns 200`() {
         given()
             .`when`()
-            .get("/")
+            .get("/api/version")
             .then()
             .statusCode(200)
-            .body(containsString("leo-legacy.be"))
+            .contentType("application/json")
+            .body("version", `is`(notNullValue()))
     }
 
     @Test
-    fun `GET root contains version placeholder element`() {
+    fun `GET api-categories returns 200 with data`() {
         given()
             .`when`()
-            .get("/")
+            .get("/api/categories")
             .then()
             .statusCode(200)
-            .body(containsString("id=\"appVersion\""))
+            .contentType("application/json")
+            .body("size()", greaterThanOrEqualTo(1))
     }
 
     @Test
-    fun `GET root includes jQuery script`() {
+    fun `GET api-recipes returns 200 with data`() {
         given()
             .`when`()
-            .get("/")
+            .get("/api/recipes")
             .then()
             .statusCode(200)
-            .body(containsString("jquery"))
+            .contentType("application/json")
+            .body("size()", greaterThanOrEqualTo(1))
     }
 
     @Test
-    fun `GET index-html returns 200`() {
+    fun `GET api-recipes-top returns 200`() {
         given()
             .`when`()
-            .get("/index.html")
+            .get("/api/recipes/top")
             .then()
             .statusCode(200)
-            .body(containsString("Welkom op leo-legacy.be"))
+            .contentType("application/json")
     }
 }

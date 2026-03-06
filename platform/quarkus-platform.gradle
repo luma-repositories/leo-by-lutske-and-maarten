@@ -26,8 +26,14 @@ ext {
         quarkusArc              : 'io.quarkus:quarkus-arc',
         quarkusKotlin           : 'io.quarkus:quarkus-kotlin',
 
+        // Database
+        quarkusHibernateOrm     : 'io.quarkus:quarkus-hibernate-orm-panache-kotlin',
+        quarkusJdbcPostgresql   : 'io.quarkus:quarkus-jdbc-postgresql',
+        quarkusFlyway           : 'io.quarkus:quarkus-flyway',
+
         // Testing
         quarkusJunit5           : 'io.quarkus:quarkus-junit5',
+        quarkusTestH2           : 'io.quarkus:quarkus-jdbc-h2',
         restAssured             : "io.rest-assured:rest-assured:${versions.restAssured}",
     ]
 }

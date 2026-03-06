@@ -1,0 +1,39 @@
+.footer {
+  margin-top: auto;
+  background-color: var(--color-gray-900);
+}
+
+.footer__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer__flag-bar {
+  display: flex;
+  height: 3px;
+}
+
+.footer__flag-green {
+  flex: 1;
+  background-color: var(--color-green);
+}
+
+.footer__flag-white {
+  flex: 1;
+  background-color: var(--color-white);
+}
+
+.footer__flag-red {
+  flex: 1;
+  background-color: var(--color-red);
+}
+
+.footer__content {
+  padding: var(--space-lg) var(--space-xl);
+  text-align: center;
+}
+
+.footer__text {
+  color: var(--color-gray-400);
+  font-size: 0.85rem;
+}
