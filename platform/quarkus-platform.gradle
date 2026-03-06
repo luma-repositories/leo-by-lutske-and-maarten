@@ -1,0 +1,33 @@
+// =============================================================================
+// Centralized dependency version management for the Leo Legacy Quarkus project.
+// All dependency versions MUST be declared here.
+// Application modules reference versions via this platform file.
+// =============================================================================
+
+ext {
+    versions = [
+        // Quarkus
+        quarkus          : '3.17.7',
+
+        // Kotlin
+        kotlin           : '2.0.21',
+
+        // Testing
+        restAssured      : '5.5.0',
+    ]
+
+    libs = [
+        // Quarkus BOM (imported as a platform in build.gradle.kts)
+        quarkusBom              : "io.quarkus.platform:quarkus-bom:${versions.quarkus}",
+
+        // Quarkus extensions
+        quarkusRest             : 'io.quarkus:quarkus-rest',
+        quarkusRestJackson      : 'io.quarkus:quarkus-rest-jackson',
+        quarkusArc              : 'io.quarkus:quarkus-arc',
+        quarkusKotlin           : 'io.quarkus:quarkus-kotlin',
+
+        // Testing
+        quarkusJunit5           : 'io.quarkus:quarkus-junit5',
+        restAssured             : "io.rest-assured:rest-assured:${versions.restAssured}",
+    ]
+}
