@@ -107,4 +107,23 @@ describe('Header', () => {
     expect(brandLink).toBeInTheDocument();
     expect(brandLink.getAttribute('href')).toBe('/');
   });
+
+  it('renders the Importeer button linking to /import', () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ version: '1.0.0' }),
+    } as Response);
+
+    render(
+      <MemoryRouter>
+        <Header />
+      </MemoryRouter>,
+    );
+
+    const importBtn = document.getElementById('header-import-btn') as HTMLAnchorElement;
+    expect(importBtn).toBeInTheDocument();
+    expect(importBtn.textContent).toBe('Importeer');
+    expect(importBtn.getAttribute('href')).toBe('/import');
+    expect(importBtn.classList.contains('header__import-btn')).toBe(true);
+  });
 });

@@ -25,11 +25,16 @@ export default function Header() {
             <h1 className="header__title">Leo Legacy</h1>
             <span className="header__subtitle">Recepten</span>
           </Link>
-          {version && (
-            <span className="header__version" id="app-version">
-              v{version}
-            </span>
-          )}
+          <div className="header__actions">
+            <Link to="/import" className="header__import-btn" id="header-import-btn">
+              Importeer
+            </Link>
+            {version && (
+              <span className="header__version" id="app-version">
+                v{version}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </header>

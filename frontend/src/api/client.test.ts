@@ -5,7 +5,10 @@ import {
   fetchRecipes,
   fetchTopRecipes,
   fetchRecipe,
+  importRecipeImage,
+  confirmRecipeImport,
 } from './client';
+import type { ImportConfirmRequest } from './client';
 
 describe('API client', () => {
   beforeEach(() => {
@@ -143,6 +146,133 @@ describe('API client', () => {
       } as Response);
 
       await expect(fetchRecipe(999)).rejects.toThrow('Failed to fetch recipe 999');
+    });
+  });
+
+  describe('importRecipeImage', () => {
+    it('returns created status with recipe on 201', async () => {
+      const mockRecipe = {
+        id: 99,
+        title: 'Imported Recipe',
+        ingredients: ['flour', 'eggs'],
+        preparation: 'Mix and bake.',
+        categoryId: 15,
+        categoryName: 'Geimporteerd',
+        viewCount: 0,
+      };
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        status: 201,
+        json: () => Promise.resolve(mockRecipe),
+      } as Response);
+
+      const file = new File(['image-data'], 'recipe.jpg', { type: 'image/jpeg' });
+      const result = await importRecipeImage(file);
+
+      expect(fetch).toHaveBeenCalledWith('/api/recipes/import', {
+        method: 'POST',
+        body: expect.any(FormData),
+      });
+      expect(result).toEqual({ status: 'created', recipe: mockRecipe });
+    });
+
+    it('returns needs_more_info status on 422', async () => {
+      const mockData = {
+        status: 'NEEDS_MORE_INFO',
+        rawText: 'Some OCR text',
+        proposedRecipe: { title: 'Test', ingredients: null, preparation: null },
+        missingFields: ['ingredients', 'preparation'],
+        parseWarnings: ['Could not detect ingredients'],
+      };
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: false,
+        status: 422,
+        json: () => Promise.resolve(mockData),
+      } as Response);
+
+      const file = new File(['image-data'], 'recipe.png', { type: 'image/png' });
+      const result = await importRecipeImage(file);
+
+      expect(result).toEqual({ status: 'needs_more_info', data: mockData });
+    });
+
+    it('returns error status on other failure codes', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: () => Promise.resolve({ error: 'File too large' }),
+      } as Response);
+
+      const file = new File(['image-data'], 'recipe.jpg', { type: 'image/jpeg' });
+      const result = await importRecipeImage(file);
+
+      expect(result).toEqual({ status: 'error', message: 'File too large' });
+    });
+
+    it('returns error with fallback message when JSON parse fails', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: () => Promise.reject(new Error('Invalid JSON')),
+      } as Response);
+
+      const file = new File(['image-data'], 'recipe.jpg', { type: 'image/jpeg' });
+      const result = await importRecipeImage(file);
+
+      // The catch block in importRecipeImage falls back to { error: 'Unknown error' }
+      expect(result).toEqual({ status: 'error', message: 'Unknown error' });
+    });
+  });
+
+  describe('confirmRecipeImport', () => {
+    it('sends JSON body and returns recipe on success', async () => {
+      const mockRecipe = {
+        id: 100,
+        title: 'Confirmed Recipe',
+        ingredients: ['flour'],
+        preparation: 'Mix well.',
+        categoryId: 15,
+        categoryName: 'Geimporteerd',
+        viewCount: 0,
+      };
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        status: 201,
+        json: () => Promise.resolve(mockRecipe),
+      } as Response);
+
+      const request: ImportConfirmRequest = {
+        rawText: 'OCR text',
+        proposedRecipe: { title: 'Confirmed Recipe', ingredients: ['flour'], preparation: null },
+        userOverrides: { preparation: 'Mix well.' },
+      };
+
+      const result = await confirmRecipeImport(request);
+
+      expect(fetch).toHaveBeenCalledWith('/api/recipes/import/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+      });
+      expect(result).toEqual(mockRecipe);
+    });
+
+    it('throws on non-ok response', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: false,
+        status: 400,
+      } as Response);
+
+      const request: ImportConfirmRequest = {
+        rawText: 'OCR text',
+        proposedRecipe: { title: null },
+        userOverrides: {},
+      };
+
+      await expect(confirmRecipeImport(request)).rejects.toThrow('Failed to confirm recipe import');
     });
   });
 });

@@ -31,10 +31,15 @@ dependencies {
     implementation(libs["quarkusJdbcPostgresql"]!!)
     implementation(libs["quarkusFlyway"]!!)
 
+    // OCR
+    implementation(libs["tess4j"]!!)
+
     // Testing
     testImplementation(libs["quarkusJunit5"]!!)
+    testImplementation(libs["quarkusMockito"]!!)
     testImplementation(libs["restAssured"]!!)
     testImplementation(libs["quarkusTestH2"]!!)
+    testImplementation(libs["mockitoKotlin"]!!)
 }
 
 group = "be.lutske"
@@ -47,6 +52,8 @@ java {
 
 tasks.withType<Test> {
     systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
+    // JNA needs to find the native Tesseract library (installed via Homebrew on macOS)
+    systemProperty("jna.library.path", "/opt/homebrew/lib")
 }
 
 allOpen {

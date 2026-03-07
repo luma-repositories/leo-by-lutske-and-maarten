@@ -12,8 +12,12 @@ ext {
         // Kotlin
         kotlin           : '2.0.21',
 
+        // OCR
+        tess4j           : '5.13.0',
+
         // Testing
         restAssured      : '5.5.0',
+        mockitoKotlin    : '5.4.0',
     ]
 
     libs = [
@@ -31,9 +35,14 @@ ext {
         quarkusJdbcPostgresql   : 'io.quarkus:quarkus-jdbc-postgresql',
         quarkusFlyway           : 'io.quarkus:quarkus-flyway',
 
+        // OCR
+        tess4j                  : "net.sourceforge.tess4j:tess4j:${versions.tess4j}",
+
         // Testing
         quarkusJunit5           : 'io.quarkus:quarkus-junit5',
+        quarkusMockito          : 'io.quarkus:quarkus-junit5-mockito',
         quarkusTestH2           : 'io.quarkus:quarkus-jdbc-h2',
         restAssured             : "io.rest-assured:rest-assured:${versions.restAssured}",
+        mockitoKotlin           : "org.mockito.kotlin:mockito-kotlin:${versions.mockitoKotlin}",
     ]
 }

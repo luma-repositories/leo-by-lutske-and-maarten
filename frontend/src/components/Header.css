@@ -60,6 +60,28 @@
   letter-spacing: 2px;
 }
 
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.header__import-btn {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-white);
+  background-color: var(--color-green);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.header__import-btn:hover {
+  background-color: var(--color-green-dark);
+  color: var(--color-white);
+}
+
 .header__version {
   font-size: 0.75rem;
   color: var(--color-text-muted);

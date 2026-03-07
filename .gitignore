@@ -1,20 +1,36 @@
-.idea
-.claude
-.opencode
+# === OS files ===
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
 
-# Compiled class file
+# === IDE / editor ===
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+*.swp
+*.swo
+*~
+
+# === AI tool config ===
+.claude/
+.opencode/
+opencode.jsonc
+
+# === Java / Kotlin ===
 *.class
-
-# Log file
-*.log
-
-# BlueJ files
 *.ctxt
-
-# Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
-# Package Files #
+# === Log files ===
+*.log
+
+# === Package files ===
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
 *.war
@@ -24,18 +40,25 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# === JVM crash logs ===
 hs_err_pid*
 replay_pid*
 
-# Gradle
+# === Gradle ===
 build/
 .gradle/
+.kotlin/
 
-# Quarkus
+# === Quarkus ===
 target/
 bin/
+.quarkus/
 
-# Node
+# === Node / Frontend ===
 node_modules/
 frontend/dist/
+
+# === Environment / secrets ===
+.env
+.env.*
+!.env.example
