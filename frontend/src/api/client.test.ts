@@ -180,10 +180,10 @@ describe('API client', () => {
     it('returns needs_more_info status on 422', async () => {
       const mockData = {
         status: 'NEEDS_MORE_INFO',
-        rawText: 'Some OCR text',
+        rawModelResponse: '{"title":"Test"}',
         proposedRecipe: { title: 'Test', ingredients: null, preparation: null },
         missingFields: ['ingredients', 'preparation'],
-        parseWarnings: ['Could not detect ingredients'],
+        warnings: ['Could not detect ingredients'],
       };
 
       vi.spyOn(globalThis, 'fetch').mockResolvedValue({
@@ -209,6 +209,19 @@ describe('API client', () => {
       const result = await importRecipeImage(file);
 
       expect(result).toEqual({ status: 'error', message: 'File too large' });
+    });
+
+    it('returns error status on 502 provider failure', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: false,
+        status: 502,
+        json: () => Promise.resolve({ error: 'AI extraction failed: Provider unavailable' }),
+      } as Response);
+
+      const file = new File(['image-data'], 'recipe.jpg', { type: 'image/jpeg' });
+      const result = await importRecipeImage(file);
+
+      expect(result).toEqual({ status: 'error', message: 'AI extraction failed: Provider unavailable' });
     });
 
     it('returns error with fallback message when JSON parse fails', async () => {
@@ -245,7 +258,7 @@ describe('API client', () => {
       } as Response);
 
       const request: ImportConfirmRequest = {
-        rawText: 'OCR text',
+        rawModelResponse: 'model output',
         proposedRecipe: { title: 'Confirmed Recipe', ingredients: ['flour'], preparation: null },
         userOverrides: { preparation: 'Mix well.' },
       };
@@ -267,7 +280,7 @@ describe('API client', () => {
       } as Response);
 
       const request: ImportConfirmRequest = {
-        rawText: 'OCR text',
+        rawModelResponse: 'model output',
         proposedRecipe: { title: null },
         userOverrides: {},
       };

@@ -40,6 +40,9 @@ class RecipeEntity : PanacheEntityBase {
     @Column(name = "created_at")
     var createdAt: Instant? = null
 
+    @Column(name = "import_metadata", columnDefinition = "TEXT")
+    var importMetadata: String? = null
+
     constructor()
 
     constructor(
@@ -50,7 +53,8 @@ class RecipeEntity : PanacheEntityBase {
         category: CategoryEntity,
         viewCount: Int = 0,
         source: String? = null,
-        createdAt: Instant? = null
+        createdAt: Instant? = null,
+        importMetadata: String? = null
     ) {
         this.id = id
         this.title = title
@@ -60,5 +64,6 @@ class RecipeEntity : PanacheEntityBase {
         this.viewCount = viewCount
         this.source = source
         this.createdAt = createdAt
+        this.importMetadata = importMetadata
     }
 }

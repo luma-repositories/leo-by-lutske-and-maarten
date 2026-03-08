@@ -1,0 +1,32 @@
+{
+  "import": {
+    "pageTitle": "Recept importeren",
+    "pageSubtitle": "Upload een foto van een recept en wij proberen het automatisch te herkennen met AI.",
+    "fileHint": "Kies een afbeelding (PNG, JPG of WEBP, max 10 MB)",
+    "uploadBtn": "Recept herkennen",
+    "uploadBtnLoading": "Bezig met herkennen...",
+    "resetBtn": "Opnieuw kiezen",
+    "loadingText": "Afbeelding wordt geanalyseerd door AI...",
+    "warningsTitle": "Opmerkingen",
+    "missingFieldsTitle": "Ontbrekende velden",
+    "rawResponseTitle": "AI-analyse (ruwe uitvoer)",
+    "editFormTitle": "Recept aanvullen",
+    "labelTitle": "Titel *",
+    "labelIngredients": "Ingredienten * (een per regel)",
+    "labelPreparation": "Bereiding *",
+    "labelNotes": "Notities / correcties",
+    "placeholderTitle": "Naam van het recept",
+    "placeholderIngredients": "200 g bloem\n3 eieren\n100 ml melk",
+    "placeholderPreparation": "Beschrijf de bereidingswijze...",
+    "placeholderNotes": "Eventuele opmerkingen of correcties...",
+    "confirmBtn": "Bevestigen & opslaan",
+    "confirmBtnLoading": "Opslaan...",
+    "cancelBtn": "Annuleren",
+    "errorSaveFailed": "Opslaan mislukt. Probeer opnieuw.",
+    "fieldLabels": {
+      "title": "Titel",
+      "ingredients": "Ingredienten",
+      "preparation": "Bereiding"
+    }
+  }
+}

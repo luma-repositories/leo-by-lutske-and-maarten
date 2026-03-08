@@ -7,17 +7,17 @@
 ext {
     versions = [
         // Quarkus
-        quarkus          : '3.17.7',
+        quarkus              : '3.17.7',
 
         // Kotlin
-        kotlin           : '2.0.21',
+        kotlin               : '2.0.21',
 
-        // OCR
-        tess4j           : '5.13.0',
+        // LangChain4j (AI / LLM integration)
+        quarkusLangchain4j   : '0.26.2',
 
         // Testing
-        restAssured      : '5.5.0',
-        mockitoKotlin    : '5.4.0',
+        restAssured          : '5.5.0',
+        mockitoKotlin        : '5.4.0',
     ]
 
     libs = [
@@ -35,8 +35,9 @@ ext {
         quarkusJdbcPostgresql   : 'io.quarkus:quarkus-jdbc-postgresql',
         quarkusFlyway           : 'io.quarkus:quarkus-flyway',
 
-        // OCR
-        tess4j                  : "net.sourceforge.tess4j:tess4j:${versions.tess4j}",
+        // LangChain4j — AI model providers
+        langchain4jOpenai       : "io.quarkiverse.langchain4j:quarkus-langchain4j-openai:${versions.quarkusLangchain4j}",
+        langchain4jAnthropic    : "io.quarkiverse.langchain4j:quarkus-langchain4j-anthropic:${versions.quarkusLangchain4j}",
 
         // Testing
         quarkusJunit5           : 'io.quarkus:quarkus-junit5',

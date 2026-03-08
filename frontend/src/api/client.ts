@@ -64,18 +64,22 @@ export async function fetchRecipe(id: number): Promise<RecipeDetailResponse> {
 
 export interface ProposedRecipeDto {
   title?: string | null;
+  description?: string | null;
+  servings?: string | null;
   ingredients?: string[] | null;
   preparation?: string | null;
   categoryId?: number | null;
   notes?: string | null;
+  source?: string | null;
+  tags?: string[] | null;
 }
 
 export interface ImportNeedsMoreInfoResponse {
   status: 'NEEDS_MORE_INFO';
-  rawText: string;
+  rawModelResponse?: string | null;
   proposedRecipe: ProposedRecipeDto;
   missingFields: string[];
-  parseWarnings: string[];
+  warnings: string[];
 }
 
 export interface UserOverrides {
@@ -84,10 +88,12 @@ export interface UserOverrides {
   preparation?: string | null;
   categoryId?: number | null;
   notes?: string | null;
+  servings?: string | null;
+  description?: string | null;
 }
 
 export interface ImportConfirmRequest {
-  rawText: string;
+  rawModelResponse?: string | null;
   proposedRecipe: ProposedRecipeDto;
   userOverrides?: UserOverrides | null;
 }
@@ -97,7 +103,7 @@ export type ImportResult =
   | { status: 'needs_more_info'; data: ImportNeedsMoreInfoResponse }
   | { status: 'error'; message: string };
 
-/** Upload an image for OCR recipe import. */
+/** Upload an image for AI-based recipe import. */
 export async function importRecipeImage(file: File): Promise<ImportResult> {
   const formData = new FormData();
   formData.append('file', file);

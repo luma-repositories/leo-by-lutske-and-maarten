@@ -1,6 +1,8 @@
 package be.lutske.leolegacy.interfaceadapter.rest
 
-import be.lutske.leolegacy.application.service.OcrService
+import be.lutske.leolegacy.application.service.ExtractionResult
+import be.lutske.leolegacy.application.service.RecipeExtractionException
+import be.lutske.leolegacy.application.service.RecipeExtractionService
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.mockito.InjectMock
 import io.restassured.RestAssured.given
@@ -11,41 +13,44 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import java.io.File
 
 /**
  * Integration tests for the recipe import endpoints.
- * OcrService is mocked since Tesseract is not available in test environment.
+ * RecipeExtractionService is mocked since real LLM calls are not available in test environment.
  */
 @QuarkusTest
 class RecipeImportResourceTest {
 
     @InjectMock
-    lateinit var ocrService: OcrService
+    lateinit var extractionService: RecipeExtractionService
 
     @BeforeEach
     fun setup() {
-        // Default mock: return a well-structured recipe text
-        `when`(ocrService.extractText(any())).thenReturn(
-            """
-            Chocolate Mousse
-            
-            Ingredients:
-            200 g dark chocolate
-            4 eggs
-            50 g sugar
-            
-            Instructions:
-            Melt the chocolate au bain-marie.
-            Separate the eggs.
-            Whip the egg whites with sugar.
-            Fold into the chocolate.
-            """.trimIndent()
+        // Default mock: return a complete extraction result
+        `when`(extractionService.extractRecipeFromImage(any(), any())).thenReturn(
+            ExtractionResult(
+                title = "Chocolate Mousse",
+                description = "A classic French dessert",
+                servings = "4 servings",
+                ingredients = listOf("200 g dark chocolate", "4 eggs", "50 g sugar"),
+                steps = listOf(
+                    "Melt the chocolate au bain-marie.",
+                    "Separate the eggs.",
+                    "Whip the egg whites with sugar.",
+                    "Fold into the chocolate."
+                ),
+                warnings = emptyList(),
+                rawModelResponse = """{"title":"Chocolate Mousse"}""",
+                provider = "openai",
+                model = "gpt-4o"
+            )
         )
     }
 
     @Test
-    fun `POST import with valid image creates recipe when fully parsed`() {
+    fun `POST import with valid image creates recipe when fully extracted`() {
         val tempFile = createTempImageFile()
 
         given()
@@ -64,13 +69,17 @@ class RecipeImportResourceTest {
     }
 
     @Test
-    fun `POST import returns 422 when recipe is incomplete`() {
-        `when`(ocrService.extractText(any())).thenReturn(
-            """
-            Some random text without clear structure
-            that doesn't look like a recipe at all
-            just some words and sentences
-            """.trimIndent()
+    fun `POST import returns 422 when extraction is incomplete`() {
+        `when`(extractionService.extractRecipeFromImage(any(), any())).thenReturn(
+            ExtractionResult(
+                title = "Some Recipe",
+                ingredients = null,
+                steps = null,
+                warnings = listOf("Could not read ingredients from image"),
+                rawModelResponse = """{"title":"Some Recipe","warnings":["Could not read ingredients"]}""",
+                provider = "openai",
+                model = "gpt-4o"
+            )
         )
 
         val tempFile = createTempImageFile()
@@ -82,9 +91,29 @@ class RecipeImportResourceTest {
             .then()
             .statusCode(422)
             .body("status", `is`("NEEDS_MORE_INFO"))
-            .body("rawText", `is`(notNullValue()))
+            .body("rawModelResponse", `is`(notNullValue()))
             .body("proposedRecipe", `is`(notNullValue()))
             .body("missingFields.size()", greaterThanOrEqualTo(1))
+            .body("warnings.size()", greaterThanOrEqualTo(1))
+
+        tempFile.delete()
+    }
+
+    @Test
+    fun `POST import returns 502 when extraction service fails`() {
+        `when`(extractionService.extractRecipeFromImage(any(), any())).thenThrow(
+            RecipeExtractionException("Provider unavailable: connection refused")
+        )
+
+        val tempFile = createTempImageFile()
+
+        given()
+            .multiPart("file", tempFile, "image/png")
+            .`when`()
+            .post("/api/recipes/import")
+            .then()
+            .statusCode(502)
+            .body("error", `is`(notNullValue()))
 
         tempFile.delete()
     }
@@ -96,7 +125,7 @@ class RecipeImportResourceTest {
             .body(
                 """
                 {
-                    "rawText": "some ocr text",
+                    "rawModelResponse": "some model output",
                     "proposedRecipe": {
                         "title": "Test Recipe",
                         "ingredients": ["100 g flour", "2 eggs"],
@@ -122,7 +151,7 @@ class RecipeImportResourceTest {
             .body(
                 """
                 {
-                    "rawText": "some ocr text",
+                    "rawModelResponse": "some model output",
                     "proposedRecipe": {
                         "title": "Original Title",
                         "ingredients": ["old ingredient"],
@@ -152,7 +181,7 @@ class RecipeImportResourceTest {
             .body(
                 """
                 {
-                    "rawText": "some text",
+                    "rawModelResponse": "some text",
                     "proposedRecipe": {
                         "ingredients": ["flour"],
                         "preparation": "bake"
@@ -167,8 +196,15 @@ class RecipeImportResourceTest {
     }
 
     @Test
-    fun `POST import with empty OCR text returns 422`() {
-        `when`(ocrService.extractText(any())).thenReturn("")
+    fun `POST import with empty extraction returns 422`() {
+        `when`(extractionService.extractRecipeFromImage(any(), any())).thenReturn(
+            ExtractionResult(
+                warnings = listOf("Image does not appear to contain a recipe"),
+                rawModelResponse = """{"title":null,"warnings":["Image does not appear to contain a recipe"]}""",
+                provider = "openai",
+                model = "gpt-4o"
+            )
+        )
 
         val tempFile = createTempImageFile()
 
@@ -186,7 +222,7 @@ class RecipeImportResourceTest {
 
     /**
      * Creates a minimal temporary PNG file for testing.
-     * The actual image content doesn't matter since OcrService is mocked.
+     * The actual image content doesn't matter since RecipeExtractionService is mocked.
      */
     private fun createTempImageFile(): File {
         val tempFile = File.createTempFile("test-recipe", ".png")

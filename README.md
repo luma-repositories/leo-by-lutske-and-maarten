@@ -7,10 +7,7 @@ A full-stack recipe application migrating the legacy leo-legacy.be cooking websi
 - Java 21+
 - Node.js 18+ and npm
 - Podman (or Docker) for local PostgreSQL
-- Tesseract OCR (for recipe import from image feature)
-  - macOS: `brew install tesseract`
-  - Ubuntu/Debian: `sudo apt install tesseract-ocr`
-  - The `TESSDATA_PREFIX` environment variable can be set if tessdata is not in the default location
+- An AI API key for recipe import (OpenAI, Anthropic, or a local vLLM endpoint)
 - No global Gradle installation needed (uses Gradle wrapper)
 
 ## Project Structure
@@ -27,20 +24,25 @@ A full-stack recipe application migrating the legacy leo-legacy.be cooking websi
 │   └── src/
 │       ├── main/
 │       │   ├── kotlin/be/lutske/leolegacy/
-│       │   │   ├── infrastructure/persistence/
-│       │   │   │   ├── entity/                   # JPA entities (Category, Recipe)
-│       │   │   │   └── repository/               # Panache repositories
+│       │   │   ├── application/service/          # Extraction service interface + DTOs
+│       │   │   ├── infrastructure/
+│       │   │   │   ├── ai/                       # LangChain4j implementation + ChatModel producer
+│       │   │   │   └── persistence/
+│       │   │   │       ├── entity/               # JPA entities (Category, Recipe)
+│       │   │   │       └── repository/           # Panache repositories
 │       │   │   └── interfaceadapter/rest/
 │       │   │       ├── CategoryResource.kt       # GET /api/categories
 │       │   │       ├── RecipeResource.kt         # GET /api/recipes, /api/recipes/top, /api/recipes/{id}
-│       │   │       ├── RecipeImportResource.kt  # POST /api/recipes/import, /api/recipes/import/confirm
+│       │   │       ├── RecipeImportResource.kt   # POST /api/recipes/import, /api/recipes/import/confirm
 │       │   │       ├── VersionResource.kt        # GET /api/version
-│       │   │       └── *Response.kt / *Dtos.kt  # REST DTOs
+│       │   │       └── *Response.kt / *Dtos.kt   # REST DTOs
 │       │   └── resources/
-│       │       ├── application.properties        # Quarkus + datasource config
+│       │       ├── application.properties        # Quarkus + datasource + AI config
 │       │       └── db/migration/
 │       │           ├── V1__init.sql              # Schema (categories + recipes)
-│       │           └── V2__seed.sql              # Seed data (14 categories, 106 recipes)
+│       │           ├── V2__seed.sql              # Seed data (14 categories, 106 recipes)
+│       │           ├── V3__add_recipe_import_fields.sql
+│       │           └── V4__add_import_metadata.sql
 │       └── test/
 │           ├── kotlin/be/lutske/leolegacy/       # Backend tests (H2 in-memory)
 │           └── resources/application.properties  # H2 test config
@@ -52,6 +54,8 @@ A full-stack recipe application migrating the legacy leo-legacy.be cooking websi
 │       ├── App.tsx                               # Layout (Header + Routes + Footer)
 │       ├── theme.css                             # Italian color palette (green/white/red)
 │       ├── api/client.ts                         # API types + fetch helpers
+│       ├── i18n/useTranslation.ts                # Simple i18n hook
+│       ├── locales/nl.json                       # Dutch translations
 │       ├── components/                           # Header, Footer, CategorySidebar
 │       └── pages/                                # HomePage, RecipeDetailPage, ImportRecipePage
 ├── release-notes/                                # Release notes per change
@@ -68,7 +72,35 @@ podman compose up -d
 
 This starts a PostgreSQL 17 container on port 5432 with persistent volume.
 
-### 2. Start the Backend
+### 2. Configure AI Provider
+
+Set your AI API key as an environment variable:
+
+```bash
+export AI_API_KEY=sk-your-openai-key-here
+```
+
+The default provider is OpenAI with `gpt-4o`. To use a different provider, edit `backend/src/main/resources/application.properties` or use Quarkus profiles:
+
+```properties
+# OpenAI (default)
+app.ai.provider=openai
+app.ai.model=gpt-4o
+
+# Anthropic Claude
+app.ai.provider=claude
+app.ai.model=claude-sonnet-4-20250514
+
+# Local vLLM (OpenAI-compatible API)
+app.ai.provider=vllm
+app.ai.model=llava-v1.6-mistral-7b
+app.ai.base-url=http://localhost:8000/v1
+app.ai.api-key=not-needed
+```
+
+**Note for vLLM**: The served model must be vision-capable (e.g. LLaVA, Qwen-VL). If the model does not support image input, the extraction will fail with a clear error.
+
+### 3. Start the Backend
 
 ```bash
 ./gradlew :backend:quarkusDev
@@ -76,7 +108,7 @@ This starts a PostgreSQL 17 container on port 5432 with persistent volume.
 
 The Quarkus backend starts on [http://localhost:8080](http://localhost:8080) with live reload. Flyway automatically runs database migrations on startup.
 
-### 3. Start the Frontend
+### 4. Start the Frontend
 
 ```bash
 cd frontend
@@ -100,6 +132,7 @@ The Vite dev server starts on [http://localhost:3000](http://localhost:3000) and
 ```bash
 cd frontend
 npm run build    # TypeScript check + Vite production build
+npm run test     # Vitest unit tests
 npm run lint     # ESLint
 ```
 
@@ -112,42 +145,27 @@ npm run lint     # ESLint
 | GET    | `/api/recipes`                | All recipes (optional `?categoryId=N` filter)                |
 | GET    | `/api/recipes/top`            | Top 10 most-viewed recipes                                   |
 | GET    | `/api/recipes/{id}`           | Full recipe detail (ingredients + preparation)               |
-| POST   | `/api/recipes/import`         | Upload image for OCR recipe import (multipart/form-data)     |
+| POST   | `/api/recipes/import`         | Upload image for AI recipe extraction (multipart/form-data)  |
 | POST   | `/api/recipes/import/confirm` | Confirm and save an imported recipe with user corrections     |
 
-### Example: GET /api/categories
+### Recipe Import from Image (AI-powered)
 
-```json
-[
-  { "id": 1, "name": "Aperitief hapjes", "recipeCount": 12 },
-  { "id": 2, "name": "Soepen", "recipeCount": 8 }
-]
-```
-
-### Example: GET /api/recipes/1
-
-```json
-{
-  "id": 1,
-  "title": "Gevulde champignons",
-  "ingredients": ["250 g champignons", "100 g roomkaas", "..."],
-  "preparation": "Verwarm de oven op 200 graden...",
-  "categoryId": 1,
-  "categoryName": "Aperitief hapjes",
-  "viewCount": 1234
-}
-```
-
-### Recipe Import from Image
-
-Upload a photo of a recipe and the backend uses Tesseract OCR to extract text, then parses it into a structured recipe. The flow:
+Upload a photo of a recipe and the backend uses a multimodal LLM (via LangChain4j) to extract structured recipe data. The flow:
 
 1. **Upload**: `POST /api/recipes/import` with a multipart image file (PNG, JPG, WEBP, max 10 MB)
-2. **Full parse → 201**: If title, ingredients, and preparation are all detected, the recipe is saved and returned
-3. **Needs more info → 422**: If fields are missing, returns the raw OCR text, a proposed recipe, missing fields list, and parse warnings
+2. **Full extraction → 201**: If title, ingredients, and preparation are all detected, the recipe is saved and returned
+3. **Needs more info → 422**: If fields are missing, returns the raw model response, a proposed recipe, missing fields list, and warnings
 4. **Confirm**: `POST /api/recipes/import/confirm` with the proposed recipe + user overrides → saves and returns the final recipe
 
-Imported recipes are assigned to the "Geimporteerd" category. The parser supports both English and Dutch section headings (Ingredients/Benodigdheden, Instructions/Bereiding, etc.).
+Imported recipes are assigned to the "Geimporteerd" category. The LLM preserves the original language of the recipe.
+
+#### Supported AI Providers
+
+| Provider | Config value | Notes |
+|----------|-------------|-------|
+| OpenAI | `openai` | GPT-4o, GPT-4-turbo, etc. Requires API key. |
+| Anthropic Claude | `claude` | Claude Sonnet, Opus, etc. Requires API key. |
+| vLLM (local) | `vllm` | Any OpenAI-compatible endpoint. Requires `app.ai.base-url`. Model must be vision-capable. |
 
 ## Database
 
@@ -160,20 +178,26 @@ Imported recipes are assigned to the "Geimporteerd" category. The parser support
 
 Key application properties (`backend/src/main/resources/application.properties`):
 
-| Property                              | Default                                          | Description                |
-|---------------------------------------|--------------------------------------------------|----------------------------|
-| `app.version`                         | `1.2.3`                                          | Application version        |
-| `quarkus.datasource.jdbc.url`         | `jdbc:postgresql://localhost:5432/leo_legacy`     | Database connection URL    |
-| `quarkus.datasource.username`         | `leo`                                            | Database username          |
-| `quarkus.datasource.password`         | `leo`                                            | Database password          |
-| `quarkus.flyway.migrate-at-start`     | `true`                                           | Auto-run migrations        |
-| `ocr.tessdata-path`                   | `/opt/homebrew/share/tessdata`                   | Path to Tesseract tessdata |
-| `ocr.language`                        | `nld`                                            | OCR language (nld=Dutch)   |
-| `quarkus.http.limits.max-body-size`   | `10M`                                            | Max upload size            |
+| Property                              | Default                                          | Description                     |
+|---------------------------------------|--------------------------------------------------|---------------------------------|
+| `app.version`                         | `1.2.3`                                          | Application version             |
+| `quarkus.datasource.jdbc.url`         | `jdbc:postgresql://localhost:5432/leo_legacy`     | Database connection URL         |
+| `quarkus.datasource.username`         | `leo`                                            | Database username               |
+| `quarkus.datasource.password`         | `leo_secret`                                     | Database password               |
+| `quarkus.flyway.migrate-at-start`     | `true`                                           | Auto-run migrations             |
+| `app.ai.provider`                     | `openai`                                         | AI provider (openai/claude/vllm)|
+| `app.ai.model`                        | `gpt-4o`                                         | Model name                      |
+| `app.ai.api-key`                      | `${AI_API_KEY}`                                  | API key (env-backed)            |
+| `app.ai.base-url`                     | —                                                | Base URL (required for vllm)    |
+| `app.ai.timeout-seconds`             | `120`                                            | Request timeout                 |
+| `app.ai.temperature`                  | `0.1`                                            | LLM temperature                 |
+| `app.ai.max-tokens`                   | `4096`                                           | Max response tokens             |
+| `quarkus.http.limits.max-body-size`   | `10M`                                            | Max upload size                 |
 
 ## Tech Stack
 
-- **Backend**: Kotlin 2.0.21, Quarkus 3.17.7, Hibernate ORM Panache, Flyway, PostgreSQL, Tess4J (OCR)
+- **Backend**: Kotlin 2.0.21, Quarkus 3.17.7, LangChain4j 0.26.2, Hibernate ORM Panache, Flyway, PostgreSQL
 - **Frontend**: React 19, TypeScript 5.9, Vite 7, React Router 7
+- **AI**: LangChain4j with OpenAI, Anthropic Claude, and vLLM support
 - **Build**: Gradle 8.12 (wrapper), npm
 - **Infrastructure**: Podman Compose, PostgreSQL 17

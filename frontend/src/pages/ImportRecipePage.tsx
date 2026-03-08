@@ -6,11 +6,13 @@ import {
   importRecipeImage,
   confirmRecipeImport,
 } from '../api/client';
+import { useTranslation } from '../i18n/useTranslation';
 import './ImportRecipePage.css';
 
 export default function ImportRecipePage() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
 
   // Upload state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -77,7 +79,7 @@ export default function ImportRecipePage() {
       .filter((s) => s.length > 0);
 
     const request: ImportConfirmRequest = {
-      rawText: needsMoreInfo.rawText,
+      rawModelResponse: needsMoreInfo.rawModelResponse,
       proposedRecipe: needsMoreInfo.proposedRecipe,
       userOverrides: {
         title: editTitle || null,
@@ -91,7 +93,7 @@ export default function ImportRecipePage() {
       const recipe = await confirmRecipeImport(request);
       navigate(`/recipes/${recipe.id}`);
     } catch {
-      setError('Opslaan mislukt. Probeer opnieuw.');
+      setError(t('import.errorSaveFailed'));
     } finally {
       setConfirming(false);
     }
@@ -114,10 +116,10 @@ export default function ImportRecipePage() {
   return (
     <div className="import-page" id="import-recipe-page">
       <h1 className="import-page__title" id="import-page-title">
-        Recept importeren
+        {t('import.pageTitle')}
       </h1>
       <p className="import-page__subtitle" id="import-page-subtitle">
-        Upload een foto van een recept en wij proberen het automatisch te herkennen.
+        {t('import.pageSubtitle')}
       </p>
 
       {/* Error message */}
@@ -140,7 +142,7 @@ export default function ImportRecipePage() {
               id="import-file-input"
             />
             <p className="import-upload__hint" id="import-upload-hint">
-              Kies een afbeelding (PNG, JPG of WEBP, max 10 MB)
+              {t('import.fileHint')}
             </p>
           </div>
 
@@ -164,7 +166,7 @@ export default function ImportRecipePage() {
               className="import-upload__btn import-upload__btn--primary"
               id="import-upload-btn"
             >
-              {loading ? 'Bezig met herkennen...' : 'Recept herkennen'}
+              {loading ? t('import.uploadBtnLoading') : t('import.uploadBtn')}
             </button>
             {selectedFile && (
               <button
@@ -173,7 +175,7 @@ export default function ImportRecipePage() {
                 className="import-upload__btn import-upload__btn--secondary"
                 id="import-reset-btn"
               >
-                Opnieuw kiezen
+                {t('import.resetBtn')}
               </button>
             )}
           </div>
@@ -182,7 +184,7 @@ export default function ImportRecipePage() {
           {loading && (
             <div className="import-upload__loading" id="import-loading">
               <div className="import-upload__spinner"></div>
-              <p>Tekst wordt herkend via OCR...</p>
+              <p>{t('import.loadingText')}</p>
             </div>
           )}
         </div>
@@ -191,12 +193,12 @@ export default function ImportRecipePage() {
       {/* Needs more info section */}
       {needsMoreInfo && (
         <div className="import-review" id="import-review-section">
-          {/* Parse warnings */}
-          {needsMoreInfo.parseWarnings.length > 0 && (
+          {/* Warnings */}
+          {needsMoreInfo.warnings.length > 0 && (
             <div className="import-review__warnings" id="import-warnings">
-              <h3>Opmerkingen</h3>
+              <h3>{t('import.warningsTitle')}</h3>
               <ul>
-                {needsMoreInfo.parseWarnings.map((w, i) => (
+                {needsMoreInfo.warnings.map((w, i) => (
                   <li key={i} id={`import-warning-${i}`}>{w}</li>
                 ))}
               </ul>
@@ -205,37 +207,34 @@ export default function ImportRecipePage() {
 
           {/* Missing fields indicator */}
           <div className="import-review__missing" id="import-missing-fields">
-            <h3>Ontbrekende velden</h3>
+            <h3>{t('import.missingFieldsTitle')}</h3>
             <p>
               {needsMoreInfo.missingFields.map((f) => {
-                const labels: Record<string, string> = {
-                  title: 'Titel',
-                  ingredients: 'Ingredienten',
-                  preparation: 'Bereiding',
-                };
-                return labels[f] || f;
+                return t(`import.fieldLabels.${f}`) || f;
               }).join(', ')}
             </p>
           </div>
 
-          {/* Raw OCR text */}
-          <div className="import-review__raw" id="import-raw-text-section">
-            <h3>Herkende tekst (OCR)</h3>
-            <textarea
-              readOnly
-              value={needsMoreInfo.rawText}
-              className="import-review__raw-textarea"
-              id="import-raw-text"
-              rows={8}
-            />
-          </div>
+          {/* Raw model response */}
+          {needsMoreInfo.rawModelResponse && (
+            <div className="import-review__raw" id="import-raw-text-section">
+              <h3>{t('import.rawResponseTitle')}</h3>
+              <textarea
+                readOnly
+                value={needsMoreInfo.rawModelResponse}
+                className="import-review__raw-textarea"
+                id="import-raw-text"
+                rows={8}
+              />
+            </div>
+          )}
 
           {/* Editable form */}
           <div className="import-review__form" id="import-edit-form">
-            <h3>Recept aanvullen</h3>
+            <h3>{t('import.editFormTitle')}</h3>
 
             <label className="import-review__label" htmlFor="import-edit-title">
-              Titel *
+              {t('import.labelTitle')}
             </label>
             <input
               type="text"
@@ -243,42 +242,42 @@ export default function ImportRecipePage() {
               className="import-review__input"
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
-              placeholder="Naam van het recept"
+              placeholder={t('import.placeholderTitle')}
             />
 
             <label className="import-review__label" htmlFor="import-edit-ingredients">
-              Ingredienten * (een per regel)
+              {t('import.labelIngredients')}
             </label>
             <textarea
               id="import-edit-ingredients"
               className="import-review__textarea"
               value={editIngredients}
               onChange={(e) => setEditIngredients(e.target.value)}
-              placeholder="200 g bloem&#10;3 eieren&#10;100 ml melk"
+              placeholder={t('import.placeholderIngredients')}
               rows={6}
             />
 
             <label className="import-review__label" htmlFor="import-edit-preparation">
-              Bereiding *
+              {t('import.labelPreparation')}
             </label>
             <textarea
               id="import-edit-preparation"
               className="import-review__textarea"
               value={editPreparation}
               onChange={(e) => setEditPreparation(e.target.value)}
-              placeholder="Beschrijf de bereidingswijze..."
+              placeholder={t('import.placeholderPreparation')}
               rows={6}
             />
 
             <label className="import-review__label" htmlFor="import-edit-notes">
-              Notities / correcties
+              {t('import.labelNotes')}
             </label>
             <textarea
               id="import-edit-notes"
               className="import-review__textarea"
               value={editNotes}
               onChange={(e) => setEditNotes(e.target.value)}
-              placeholder="Eventuele opmerkingen of correcties..."
+              placeholder={t('import.placeholderNotes')}
               rows={3}
             />
           </div>
@@ -291,7 +290,7 @@ export default function ImportRecipePage() {
               className="import-upload__btn import-upload__btn--primary"
               id="import-confirm-btn"
             >
-              {confirming ? 'Opslaan...' : 'Bevestigen & opslaan'}
+              {confirming ? t('import.confirmBtnLoading') : t('import.confirmBtn')}
             </button>
             <button
               onClick={handleReset}
@@ -299,7 +298,7 @@ export default function ImportRecipePage() {
               className="import-upload__btn import-upload__btn--secondary"
               id="import-cancel-btn"
             >
-              Annuleren
+              {t('import.cancelBtn')}
             </button>
           </div>
         </div>

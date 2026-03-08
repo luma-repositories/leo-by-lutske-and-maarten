@@ -4,10 +4,9 @@ import io.quarkus.test.junit.QuarkusTestProfile
 
 /**
  * Quarkus test profile that uses the real PostgreSQL database (via podman-compose)
- * and real Tesseract OCR instead of H2 + mocked OCR.
+ * and mocked AI extraction service.
  *
  * Prerequisite: `podman compose up -d` must be running.
- * Prerequisite: Tesseract must be installed (`brew install tesseract`).
  */
 class PostgresIntegrationTestProfile : QuarkusTestProfile {
 
@@ -23,9 +22,10 @@ class PostgresIntegrationTestProfile : QuarkusTestProfile {
             "quarkus.flyway.migrate-at-start" to "true",
             "quarkus.flyway.clean-at-start" to "true",
 
-            // Real Tesseract OCR config
-            "ocr.tessdata-path" to "/opt/homebrew/share/tessdata",
-            "ocr.language" to "eng",
+            // AI config (extraction service is mocked in integration tests)
+            "app.ai.provider" to "openai",
+            "app.ai.model" to "gpt-4o-test",
+            "app.ai.api-key" to "test-key-not-real",
         )
     }
 }

@@ -1,8 +1,8 @@
 package be.lutske.leolegacy.interfaceadapter.rest
 
-import be.lutske.leolegacy.application.service.OcrException
-import be.lutske.leolegacy.application.service.OcrService
-import be.lutske.leolegacy.application.service.RecipeParserService
+import be.lutske.leolegacy.application.service.ExtractionResult
+import be.lutske.leolegacy.application.service.RecipeExtractionException
+import be.lutske.leolegacy.application.service.RecipeExtractionService
 import be.lutske.leolegacy.infrastructure.persistence.entity.RecipeEntity
 import be.lutske.leolegacy.infrastructure.persistence.repository.CategoryRepository
 import be.lutske.leolegacy.infrastructure.persistence.repository.RecipeRepository
@@ -19,12 +19,15 @@ import org.jboss.resteasy.reactive.RestForm
 import java.time.Instant
 
 /**
- * REST resource for importing recipes from images via OCR.
+ * REST resource for importing recipes from images via LLM-based extraction.
+ *
+ * The image is sent to a multimodal LLM (OpenAI, Claude, or vLLM) through
+ * LangChain4j. The model extracts structured recipe data which is validated
+ * and either stored directly or returned for user correction.
  */
 @Path("/api/recipes/import")
 class RecipeImportResource(
-    private val ocrService: OcrService,
-    private val parserService: RecipeParserService,
+    private val extractionService: RecipeExtractionService,
     private val recipeRepository: RecipeRepository,
     private val categoryRepository: CategoryRepository
 ) {
@@ -39,13 +42,13 @@ class RecipeImportResource(
     }
 
     /**
-     * Upload an image and attempt to extract a recipe via OCR.
+     * Upload an image and attempt to extract a recipe via LLM.
      *
      * Returns:
-     * - 201 Created with RecipeDetailResponse if recipe was fully parsed and saved
-     * - 422 Unprocessable Entity with ImportNeedsMoreInfoResponse if parsing is incomplete
+     * - 201 Created with RecipeDetailResponse if recipe was fully extracted and saved
+     * - 422 Unprocessable Entity with ImportNeedsMoreInfoResponse if extraction is incomplete
      * - 400 Bad Request if file validation fails
-     * - 500 Internal Server Error if OCR fails
+     * - 502 Bad Gateway if the LLM provider is unavailable
      */
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -55,24 +58,23 @@ class RecipeImportResource(
         // Validate file
         validateFile(file)
 
-        // Read file bytes
+        // Read file bytes and determine MIME type
         val imageBytes = file.uploadedFile().toFile().readBytes()
+        val mimeType = file.contentType() ?: "image/jpeg"
 
-        // Perform OCR
-        val rawText: String = try {
-            ocrService.extractText(imageBytes)
-        } catch (e: OcrException) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(mapOf("error" to "OCR failed: ${e.message}"))
+        // Extract recipe via LLM
+        val extraction: ExtractionResult = try {
+            extractionService.extractRecipeFromImage(imageBytes, mimeType)
+        } catch (e: RecipeExtractionException) {
+            return Response.status(502)
+                .entity(mapOf("error" to "AI extraction failed: ${e.message}"))
                 .build()
         }
 
-        // Parse the OCR text
-        val parseResult = parserService.parse(rawText)
-
         // If all required fields are present, create the recipe directly
-        if (parseResult.missingFields.isEmpty()) {
-            val recipe = createRecipeFromProposal(parseResult.proposedRecipe)
+        if (extraction.isComplete()) {
+            val proposal = extractionToProposal(extraction)
+            val recipe = createRecipeFromProposal(proposal, extraction)
             return Response.status(Response.Status.CREATED)
                 .entity(recipe.toDetailResponse())
                 .build()
@@ -82,10 +84,10 @@ class RecipeImportResource(
         return Response.status(422)
             .entity(
                 ImportNeedsMoreInfoResponse(
-                    rawText = rawText,
-                    proposedRecipe = parseResult.proposedRecipe,
-                    missingFields = parseResult.missingFields,
-                    parseWarnings = parseResult.parseWarnings
+                    rawModelResponse = extraction.rawModelResponse,
+                    proposedRecipe = extractionToProposal(extraction),
+                    missingFields = extraction.missingFields(),
+                    warnings = extraction.warnings
                 )
             )
             .build()
@@ -121,10 +123,13 @@ class RecipeImportResource(
             title = title,
             ingredients = ingredients,
             preparation = if (notes.isNullOrBlank()) preparation else "$preparation\n\nNotities: $notes",
-            categoryId = categoryId
+            categoryId = categoryId,
+            description = overrides?.description ?: proposed.description,
+            servings = overrides?.servings ?: proposed.servings,
+            source = proposed.source
         )
 
-        val recipe = createRecipeFromProposal(mergedProposal)
+        val recipe = createRecipeFromProposal(mergedProposal, null)
         return Response.status(Response.Status.CREATED)
             .entity(recipe.toDetailResponse())
             .build()
@@ -151,7 +156,22 @@ class RecipeImportResource(
         }
     }
 
-    private fun createRecipeFromProposal(proposal: ProposedRecipeDto): RecipeEntity {
+    /**
+     * Convert an [ExtractionResult] to a [ProposedRecipeDto].
+     */
+    private fun extractionToProposal(extraction: ExtractionResult): ProposedRecipeDto {
+        return ProposedRecipeDto(
+            title = extraction.title,
+            description = extraction.description,
+            servings = extraction.servings,
+            ingredients = extraction.ingredients,
+            preparation = extraction.steps?.joinToString("\n"),
+            source = extraction.source,
+            tags = extraction.tags
+        )
+    }
+
+    private fun createRecipeFromProposal(proposal: ProposedRecipeDto, extraction: ExtractionResult?): RecipeEntity {
         val categoryId = proposal.categoryId ?: DEFAULT_IMPORT_CATEGORY_ID
         val category = categoryRepository.findById(categoryId)
             ?: categoryRepository.findById(DEFAULT_IMPORT_CATEGORY_ID)
@@ -163,8 +183,21 @@ class RecipeImportResource(
         recipe.preparation = proposal.preparation ?: ""
         recipe.category = category
         recipe.viewCount = 0
-        recipe.source = "Imported from image"
+        recipe.source = proposal.source ?: "Imported from image"
         recipe.createdAt = Instant.now()
+
+        // Store extraction metadata as JSON if available
+        if (extraction != null) {
+            val metadata = buildString {
+                append("{")
+                append("\"provider\":\"${extraction.provider ?: "unknown"}\",")
+                append("\"model\":\"${extraction.model ?: "unknown"}\",")
+                append("\"warnings\":")
+                append(extraction.warnings.joinToString(",", "[", "]") { "\"${it.replace("\"", "\\\"")}\"" })
+                append("}")
+            }
+            recipe.importMetadata = metadata
+        }
 
         recipeRepository.persist(recipe)
         return recipe

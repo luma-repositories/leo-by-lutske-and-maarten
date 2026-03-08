@@ -137,7 +137,7 @@ describe('ImportRecipePage', () => {
 
     expect(screen.getByText('Bezig met herkennen...')).toBeInTheDocument();
     expect(document.getElementById('import-loading')).toBeInTheDocument();
-    expect(screen.getByText('Tekst wordt herkend via OCR...')).toBeInTheDocument();
+    expect(screen.getByText('Afbeelding wordt geanalyseerd door AI...')).toBeInTheDocument();
   });
 
   it('navigates to recipe detail on successful import (201)', async () => {
@@ -184,14 +184,14 @@ describe('ImportRecipePage', () => {
       json: () =>
         Promise.resolve({
           status: 'NEEDS_MORE_INFO',
-          rawText: 'Some OCR text here',
+          rawModelResponse: '{"title":"Proposed Title"}',
           proposedRecipe: {
             title: 'Proposed Title',
             ingredients: ['ingredient 1', 'ingredient 2'],
             preparation: null,
           },
           missingFields: ['preparation'],
-          parseWarnings: ['Could not detect preparation section'],
+          warnings: ['Could not detect preparation section'],
         }),
     } as Response);
 
@@ -211,7 +211,7 @@ describe('ImportRecipePage', () => {
       expect(document.getElementById('import-review-section')).toBeInTheDocument();
     });
 
-    // Check raw text is displayed
+    // Check raw model response is displayed
     expect(document.getElementById('import-raw-text')).toBeInTheDocument();
 
     // Check form fields are pre-filled
@@ -225,7 +225,7 @@ describe('ImportRecipePage', () => {
     expect(document.getElementById('import-missing-fields')).toBeInTheDocument();
     expect(screen.getByText('Bereiding')).toBeInTheDocument();
 
-    // Check parse warnings
+    // Check warnings
     expect(document.getElementById('import-warnings')).toBeInTheDocument();
     expect(screen.getByText('Could not detect preparation section')).toBeInTheDocument();
 
@@ -268,6 +268,36 @@ describe('ImportRecipePage', () => {
     });
   });
 
+  it('shows error message on 502 provider failure', async () => {
+    const user = userEvent.setup();
+
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 502,
+      json: () =>
+        Promise.resolve({
+          error: 'AI extraction failed: Provider unavailable',
+        }),
+    } as Response);
+
+    render(
+      <MemoryRouter>
+        <ImportRecipePage />
+      </MemoryRouter>,
+    );
+
+    const fileInput = document.getElementById('import-file-input') as HTMLInputElement;
+    await user.upload(fileInput, createMockFile());
+
+    const uploadBtn = document.getElementById('import-upload-btn') as HTMLButtonElement;
+    await user.click(uploadBtn);
+
+    await waitFor(() => {
+      expect(document.getElementById('import-error')).toBeInTheDocument();
+      expect(screen.getByText('AI extraction failed: Provider unavailable')).toBeInTheDocument();
+    });
+  });
+
   it('navigates to recipe detail after confirming import', async () => {
     const user = userEvent.setup();
 
@@ -283,14 +313,14 @@ describe('ImportRecipePage', () => {
           json: () =>
             Promise.resolve({
               status: 'NEEDS_MORE_INFO',
-              rawText: 'OCR text',
+              rawModelResponse: '{"title":"My Recipe"}',
               proposedRecipe: {
                 title: 'My Recipe',
                 ingredients: ['flour'],
                 preparation: null,
               },
               missingFields: ['preparation'],
-              parseWarnings: [],
+              warnings: [],
             }),
         } as Response);
       }
@@ -347,14 +377,14 @@ describe('ImportRecipePage', () => {
       json: () =>
         Promise.resolve({
           status: 'NEEDS_MORE_INFO',
-          rawText: 'OCR text',
+          rawModelResponse: '{}',
           proposedRecipe: {
             title: null,
             ingredients: null,
             preparation: null,
           },
           missingFields: ['title', 'ingredients', 'preparation'],
-          parseWarnings: [],
+          warnings: [],
         }),
     } as Response);
 
@@ -389,14 +419,14 @@ describe('ImportRecipePage', () => {
           json: () =>
             Promise.resolve({
               status: 'NEEDS_MORE_INFO',
-              rawText: 'OCR text',
+              rawModelResponse: '{"title":"Test Recipe"}',
               proposedRecipe: {
                 title: 'Test Recipe',
                 ingredients: ['item'],
                 preparation: null,
               },
               missingFields: ['preparation'],
-              parseWarnings: [],
+              warnings: [],
             }),
         } as Response);
       }
@@ -441,14 +471,14 @@ describe('ImportRecipePage', () => {
       json: () =>
         Promise.resolve({
           status: 'NEEDS_MORE_INFO',
-          rawText: 'OCR text',
+          rawModelResponse: '{"title":"Test"}',
           proposedRecipe: {
             title: 'Test',
             ingredients: ['item'],
             preparation: null,
           },
           missingFields: ['preparation'],
-          parseWarnings: [],
+          warnings: [],
         }),
     } as Response);
 

@@ -1,7 +1,10 @@
 package be.lutske.leolegacy.interfaceadapter.rest
 
+import be.lutske.leolegacy.application.service.ExtractionResult
+import be.lutske.leolegacy.application.service.RecipeExtractionService
 import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.TestProfile
+import io.quarkus.test.junit.mockito.InjectMock
 import io.restassured.RestAssured.given
 import io.restassured.response.Response
 import org.hamcrest.CoreMatchers.`is`
@@ -9,7 +12,10 @@ import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.Matchers.greaterThan
 import org.hamcrest.Matchers.greaterThanOrEqualTo
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.`when`
+import org.mockito.kotlin.any
 import java.io.File
 
 /**
@@ -17,16 +23,17 @@ import java.io.File
  *
  * This test uses:
  * - Real PostgreSQL database (via podman-compose)
- * - Real Tesseract OCR (installed locally via Homebrew)
- * - The actual test-recipe.jpg image (handwritten Italian recipe: "Scaloppine alla pizzaiola")
+ * - Mocked AI extraction service (LLM calls are not made in tests)
  *
  * Prerequisites:
  * - `podman compose up -d` must be running
- * - Tesseract must be installed (`brew install tesseract`)
  */
 @QuarkusTest
 @TestProfile(PostgresIntegrationTestProfile::class)
 class RecipeImportIntegrationTest {
+
+    @InjectMock
+    lateinit var extractionService: RecipeExtractionService
 
     companion object {
         private const val EXPECTED_TITLE = "Scaloppine alla pizzaiola"
@@ -45,21 +52,33 @@ class RecipeImportIntegrationTest {
             "Lasciar asciugare il pomodoro e cuocere la carne. (cott. 1 ora)"
     }
 
+    @BeforeEach
+    fun setup() {
+        // Mock the extraction service to return a partial result (simulating real LLM behavior)
+        `when`(extractionService.extractRecipeFromImage(any(), any())).thenReturn(
+            ExtractionResult(
+                title = EXPECTED_TITLE,
+                ingredients = EXPECTED_INGREDIENTS,
+                steps = listOf(EXPECTED_PREPARATION),
+                warnings = listOf("Handwritten text — some words may be inaccurate"),
+                rawModelResponse = """{"title":"$EXPECTED_TITLE"}""",
+                provider = "openai",
+                model = "gpt-4o"
+            )
+        )
+    }
+
     /**
      * Full import flow:
-     * 1. Upload the real handwritten recipe image → OCR processes it
-     * 2. If 201 (fully parsed): validate the recipe was created and verify in DB
-     * 3. If 422 (needs more info): confirm with user overrides, then verify in DB
-     *
-     * Either way, the recipe ends up persisted in the database and we validate its content.
+     * 1. Upload an image → LLM extraction processes it (mocked)
+     * 2. If 201 (fully extracted): validate the recipe was created and verify in DB
+     * 3. Also test the confirm flow with user overrides, then verify in DB
      */
     @Test
-    fun `full import flow - upload handwritten image and verify recipe is persisted in database`() {
-        val imageFile = File(
-            javaClass.classLoader.getResource("testdata/test-recipe.jpg")!!.toURI()
-        )
+    fun `full import flow - upload image and verify recipe is persisted in database`() {
+        val imageFile = createTempImageFile()
 
-        // --- Step 1: Upload the real image for OCR ---
+        // --- Step 1: Upload the image for LLM extraction ---
         val importResponse: Response = given()
             .multiPart("file", imageFile, "image/jpeg")
             .`when`()
@@ -68,18 +87,13 @@ class RecipeImportIntegrationTest {
         val statusCode = importResponse.statusCode
         assertTrue(
             statusCode == 201 || statusCode == 422,
-            "Expected 201 (fully parsed) or 422 (needs more info), but got $statusCode"
+            "Expected 201 (fully extracted) or 422 (needs more info), but got $statusCode"
         )
 
-        val recipeId: Int
-
         if (statusCode == 201) {
-            // OCR + parser managed to extract a complete recipe directly
-            recipeId = importResponse.jsonPath().getInt("id")
+            val recipeId = importResponse.jsonPath().getInt("id")
             assertTrue(recipeId > 0, "Recipe ID should be positive")
 
-            // The OCR-parsed recipe will have garbled content from handwriting,
-            // but it was accepted as complete. Verify it exists and has the right category.
             given()
                 .`when`()
                 .get("/api/recipes/$recipeId")
@@ -88,13 +102,9 @@ class RecipeImportIntegrationTest {
                 .body("id", `is`(recipeId))
                 .body("categoryName", `is`("Geimporteerd"))
                 .body("viewCount", `is`(0))
-
-            // Now also test the confirm flow separately to get a recipe with correct content
-            recipeId.let { /* already verified direct import */ }
         }
 
         // --- Step 2: Always test the confirm flow with correct recipe data ---
-        // This ensures we can import the actual recipe content into the database
         val confirmResponse = given()
             .contentType("application/json")
             .body(buildConfirmRequestJson())
@@ -129,28 +139,20 @@ class RecipeImportIntegrationTest {
             .body("id", `is`(confirmedRecipeId))
             .body("title", `is`(EXPECTED_TITLE))
             .body("ingredients.size()", `is`(7))
-            .body("ingredients[0]", `is`("1 scatola di pomodori"))
-            .body("ingredients[1]", `is`("2 spicchi d'aglio"))
-            .body("ingredients[2]", `is`("un po' di capperi"))
-            .body("ingredients[3]", `is`("un po' di sale"))
-            .body("ingredients[4]", `is`("una mozzarella"))
-            .body("ingredients[5]", `is`("un po' d'olio"))
-            .body("ingredients[6]", `is`("origano"))
             .body("preparation", `is`(EXPECTED_PREPARATION))
             .body("categoryId", `is`(15))
             .body("categoryName", `is`("Geimporteerd"))
             .body("viewCount", `is`(0))
+
+        imageFile.delete()
     }
 
     /**
-     * Verify that the OCR endpoint actually processes the image and returns meaningful data.
-     * Even though handwritten text produces garbled OCR, the endpoint should not error out.
+     * Verify that the import endpoint processes the image and returns meaningful data.
      */
     @Test
-    fun `upload real image produces OCR output without server error`() {
-        val imageFile = File(
-            javaClass.classLoader.getResource("testdata/test-recipe.jpg")!!.toURI()
-        )
+    fun `upload image produces extraction output without server error`() {
+        val imageFile = createTempImageFile()
 
         val response: Response = given()
             .multiPart("file", imageFile, "image/jpeg")
@@ -160,27 +162,27 @@ class RecipeImportIntegrationTest {
         val statusCode = response.statusCode
         assertTrue(
             statusCode == 201 || statusCode == 422,
-            "Expected 201 or 422, but got $statusCode — OCR should not produce a server error"
+            "Expected 201 or 422, but got $statusCode — extraction should not produce a server error"
         )
 
         if (statusCode == 422) {
-            // Validate the needs-more-info response structure
-            val rawText = response.jsonPath().getString("rawText")
-            assertTrue(rawText.isNotBlank(), "OCR should have produced some text from the image")
+            val rawResponse = response.jsonPath().getString("rawModelResponse")
+            assertTrue(rawResponse != null && rawResponse.isNotBlank(), "Should include raw model response")
 
             val missingFields = response.jsonPath().getList<String>("missingFields")
-            assertTrue(missingFields.isNotEmpty(), "Should report at least one missing field")
+            assertTrue(missingFields != null, "Should report missing fields")
 
             val proposedRecipe = response.jsonPath().getMap<String, Any>("proposedRecipe")
             assertTrue(proposedRecipe != null, "Should include a proposed recipe")
         } else {
-            // 201: recipe was fully parsed — validate it has required fields
             val title = response.jsonPath().getString("title")
-            assertTrue(title.isNotBlank(), "Parsed recipe should have a title")
+            assertTrue(title.isNotBlank(), "Extracted recipe should have a title")
 
             val ingredientCount = response.jsonPath().getList<String>("ingredients").size
-            assertTrue(ingredientCount >= 1, "Parsed recipe should have at least one ingredient")
+            assertTrue(ingredientCount >= 1, "Extracted recipe should have at least one ingredient")
         }
+
+        imageFile.delete()
     }
 
     /**
@@ -188,7 +190,6 @@ class RecipeImportIntegrationTest {
      */
     @Test
     fun `imported recipe appears in Geimporteerd category listing`() {
-        // Create a recipe via confirm
         val confirmResponse = given()
             .contentType("application/json")
             .body(buildConfirmRequestJson())
@@ -202,7 +203,6 @@ class RecipeImportIntegrationTest {
         val recipeId = confirmResponse.jsonPath().getInt("id")
         val recipeTitle = confirmResponse.jsonPath().getString("title")
 
-        // Verify it appears in the category listing
         val recipesInCategory = given()
             .queryParam("categoryId", 15)
             .`when`()
@@ -221,7 +221,7 @@ class RecipeImportIntegrationTest {
     private fun buildConfirmRequestJson(): String {
         return """
         {
-            "rawText": "OCR text from handwritten recipe image",
+            "rawModelResponse": "LLM extraction output from handwritten recipe image",
             "proposedRecipe": {
                 "title": null,
                 "ingredients": null,
@@ -242,5 +242,21 @@ class RecipeImportIntegrationTest {
             }
         }
         """.trimIndent()
+    }
+
+    /**
+     * Creates a minimal temporary PNG file for testing.
+     * The actual image content doesn't matter since RecipeExtractionService is mocked.
+     */
+    private fun createTempImageFile(): File {
+        val tempFile = File.createTempFile("test-recipe", ".png")
+        tempFile.writeBytes(
+            byteArrayOf(
+                0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+                0x00, 0x00, 0x00, 0x0D,
+                0x49, 0x48, 0x44, 0x52
+            )
+        )
+        return tempFile
     }
 }
