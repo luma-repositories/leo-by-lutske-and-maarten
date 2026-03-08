@@ -47,29 +47,32 @@ class LangChain4jRecipeExtractionService(
 
             Your task:
             1. Extract the recipe data from the image as accurately as possible.
-            2. Return ONLY a valid JSON object — no markdown, no code fences, no explanation.
-            3. Preserve ingredient quantities, units, and cooking steps faithfully.
-            4. If a field is not visible, unclear, or you are uncertain, set it to null.
-            5. Do NOT invent or hallucinate data that is not in the image.
-            6. Add warnings for any uncertainty or ambiguity.
+            2. TRANSLATE ALL extracted content into English. The recipe in the image may be
+               in any language (Dutch, Italian, French, etc.) — you MUST translate the title,
+               ingredients, steps, description, and all other text fields into English.
+            3. Return ONLY a valid JSON object — no markdown, no code fences, no explanation.
+            4. Preserve ingredient quantities and units faithfully (translate unit names to English).
+            5. If a field is not visible, unclear, or you are uncertain, set it to null.
+            6. Do NOT invent or hallucinate data that is not in the image.
+            7. Add warnings for any uncertainty or ambiguity.
 
             Required JSON structure:
             {
-              "title": "string or null",
-              "description": "string or null — brief summary if visible",
-              "servings": "string or null — e.g. '4 personen'",
-              "ingredients": ["string", ...] or null — each ingredient as a single string with amount+unit+item,
-              "steps": ["string", ...] or null — each preparation step as a string,
-              "source": "string or null — attribution if visible",
-              "tags": ["string", ...] or null — categories or tags if visible,
-              "warnings": ["string", ...] — list of warnings about uncertain/missing data
+              "title": "string or null — in English",
+              "description": "string or null — brief summary in English",
+              "servings": "string or null — e.g. '4 servings'",
+              "ingredients": ["string", ...] or null — each ingredient as a single string with amount+unit+item, in English,
+              "steps": ["string", ...] or null — each preparation step as a string, in English,
+              "source": "string or null — attribution if visible (keep original name)",
+              "tags": ["string", ...] or null — categories or tags in English,
+              "warnings": ["string", ...] — list of warnings about uncertain/missing data, in English
             }
 
             Important rules:
-            - The recipe may be in any language. Preserve the original language.
+            - ALWAYS output in English, even if the source recipe is in another language.
             - If the image is not a recipe, return: {"title": null, "warnings": ["Image does not appear to contain a recipe"]}
             - If text is partially illegible, extract what you can and add a warning.
-            - Ingredients should each be a single string like "200 g bloem" or "3 eieren".
+            - Ingredients should each be a single string like "200 g dark chocolate" or "3 eggs".
             - Steps should be individual instructions, not one big block of text.
         """.trimIndent()
     }

@@ -17,15 +17,20 @@ data class ProposedRecipeDto(
 )
 
 /**
- * Response returned when LLM extraction succeeds but the parsed recipe is incomplete.
- * HTTP 422 Unprocessable Entity.
+ * Response returned from POST /api/recipes/import after LLM extraction.
+ * Always returned as HTTP 200 — the recipe is never auto-saved.
+ *
+ * Status values:
+ * - "COMPLETE": all required fields were extracted successfully
+ * - "NEEDS_MORE_INFO": some required fields are missing or uncertain
+ * - "ERROR": extraction failed (e.g. image is not a recipe)
  */
-data class ImportNeedsMoreInfoResponse(
-    val status: String = "NEEDS_MORE_INFO",
+data class ImportExtractionResponse(
+    val status: String,
     val rawModelResponse: String? = null,
     val proposedRecipe: ProposedRecipeDto,
-    val missingFields: List<String>,
-    val warnings: List<String>
+    val missingFields: List<String> = emptyList(),
+    val warnings: List<String> = emptyList()
 )
 
 /**

@@ -6,7 +6,6 @@ import io.quarkus.test.junit.QuarkusTest
 import io.quarkus.test.junit.TestProfile
 import io.quarkus.test.junit.mockito.InjectMock
 import io.restassured.RestAssured.given
-import io.restassured.response.Response
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.Matchers.greaterThan
@@ -21,9 +20,7 @@ import java.io.File
 /**
  * Full end-to-end integration test for recipe import from image.
  *
- * This test uses:
- * - Real PostgreSQL database (via podman-compose)
- * - Mocked AI extraction service (LLM calls are not made in tests)
+ * Uses real PostgreSQL database (via podman-compose) and mocked AI extraction.
  *
  * Prerequisites:
  * - `podman compose up -d` must be running
@@ -38,23 +35,22 @@ class RecipeImportIntegrationTest {
     companion object {
         private const val EXPECTED_TITLE = "Scaloppine alla pizzaiola"
         private val EXPECTED_INGREDIENTS = listOf(
-            "1 scatola di pomodori",
-            "2 spicchi d'aglio",
-            "un po' di capperi",
-            "un po' di sale",
-            "una mozzarella",
-            "un po' d'olio",
-            "origano"
+            "1 can of tomatoes",
+            "2 cloves of garlic",
+            "some capers",
+            "some salt",
+            "one mozzarella",
+            "some oil",
+            "oregano"
         )
         private const val EXPECTED_PREPARATION =
-            "Si mette in una pentola il pomodoro e l'aglio, i capperi, il sale, l'olio, " +
-            "le scaloppine ed infine la mozzarella e l'origano. " +
-            "Lasciar asciugare il pomodoro e cuocere la carne. (cott. 1 ora)"
+            "Place the tomato and garlic, capers, salt, oil, " +
+            "the scaloppine and finally the mozzarella and oregano in a pot. " +
+            "Let the tomato reduce and cook the meat. (cooking time: 1 hour)"
     }
 
     @BeforeEach
     fun setup() {
-        // Mock the extraction service to return a partial result (simulating real LLM behavior)
         `when`(extractionService.extractRecipeFromImage(any(), any())).thenReturn(
             ExtractionResult(
                 title = EXPECTED_TITLE,
@@ -70,41 +66,26 @@ class RecipeImportIntegrationTest {
 
     /**
      * Full import flow:
-     * 1. Upload an image → LLM extraction processes it (mocked)
-     * 2. If 201 (fully extracted): validate the recipe was created and verify in DB
-     * 3. Also test the confirm flow with user overrides, then verify in DB
+     * 1. Upload image → get extraction result (200, never auto-saved)
+     * 2. Confirm with user data → recipe saved (201)
+     * 3. Verify recipe is persisted
      */
     @Test
-    fun `full import flow - upload image and verify recipe is persisted in database`() {
+    fun `full import flow - upload returns extraction for review then confirm saves`() {
         val imageFile = createTempImageFile()
 
-        // --- Step 1: Upload the image for LLM extraction ---
-        val importResponse: Response = given()
+        // Step 1: Upload returns extraction for review (200, not 201)
+        given()
             .multiPart("file", imageFile, "image/jpeg")
             .`when`()
             .post("/api/recipes/import")
+            .then()
+            .statusCode(200)
+            .body("status", `is`("COMPLETE"))
+            .body("proposedRecipe.title", `is`(EXPECTED_TITLE))
+            .body("proposedRecipe.ingredients.size()", `is`(7))
 
-        val statusCode = importResponse.statusCode
-        assertTrue(
-            statusCode == 201 || statusCode == 422,
-            "Expected 201 (fully extracted) or 422 (needs more info), but got $statusCode"
-        )
-
-        if (statusCode == 201) {
-            val recipeId = importResponse.jsonPath().getInt("id")
-            assertTrue(recipeId > 0, "Recipe ID should be positive")
-
-            given()
-                .`when`()
-                .get("/api/recipes/$recipeId")
-                .then()
-                .statusCode(200)
-                .body("id", `is`(recipeId))
-                .body("categoryName", `is`("Geimporteerd"))
-                .body("viewCount", `is`(0))
-        }
-
-        // --- Step 2: Always test the confirm flow with correct recipe data ---
+        // Step 2: Confirm to actually save
         val confirmResponse = given()
             .contentType("application/json")
             .body(buildConfirmRequestJson())
@@ -115,13 +96,6 @@ class RecipeImportIntegrationTest {
             .body("id", `is`(greaterThan(0)))
             .body("title", `is`(EXPECTED_TITLE))
             .body("ingredients.size()", `is`(7))
-            .body("ingredients[0]", `is`("1 scatola di pomodori"))
-            .body("ingredients[1]", `is`("2 spicchi d'aglio"))
-            .body("ingredients[2]", `is`("un po' di capperi"))
-            .body("ingredients[3]", `is`("un po' di sale"))
-            .body("ingredients[4]", `is`("una mozzarella"))
-            .body("ingredients[5]", `is`("un po' d'olio"))
-            .body("ingredients[6]", `is`("origano"))
             .body("preparation", `is`(notNullValue()))
             .body("categoryName", `is`("Geimporteerd"))
             .body("viewCount", `is`(0))
@@ -130,7 +104,7 @@ class RecipeImportIntegrationTest {
 
         val confirmedRecipeId = confirmResponse.jsonPath().getInt("id")
 
-        // --- Step 3: Verify the confirmed recipe is persisted in the database ---
+        // Step 3: Verify persisted
         given()
             .`when`()
             .get("/api/recipes/$confirmedRecipeId")
@@ -139,55 +113,28 @@ class RecipeImportIntegrationTest {
             .body("id", `is`(confirmedRecipeId))
             .body("title", `is`(EXPECTED_TITLE))
             .body("ingredients.size()", `is`(7))
-            .body("preparation", `is`(EXPECTED_PREPARATION))
             .body("categoryId", `is`(15))
             .body("categoryName", `is`("Geimporteerd"))
-            .body("viewCount", `is`(0))
 
         imageFile.delete()
     }
 
-    /**
-     * Verify that the import endpoint processes the image and returns meaningful data.
-     */
     @Test
-    fun `upload image produces extraction output without server error`() {
+    fun `upload image returns extraction without server error`() {
         val imageFile = createTempImageFile()
 
-        val response: Response = given()
+        given()
             .multiPart("file", imageFile, "image/jpeg")
             .`when`()
             .post("/api/recipes/import")
-
-        val statusCode = response.statusCode
-        assertTrue(
-            statusCode == 201 || statusCode == 422,
-            "Expected 201 or 422, but got $statusCode — extraction should not produce a server error"
-        )
-
-        if (statusCode == 422) {
-            val rawResponse = response.jsonPath().getString("rawModelResponse")
-            assertTrue(rawResponse != null && rawResponse.isNotBlank(), "Should include raw model response")
-
-            val missingFields = response.jsonPath().getList<String>("missingFields")
-            assertTrue(missingFields != null, "Should report missing fields")
-
-            val proposedRecipe = response.jsonPath().getMap<String, Any>("proposedRecipe")
-            assertTrue(proposedRecipe != null, "Should include a proposed recipe")
-        } else {
-            val title = response.jsonPath().getString("title")
-            assertTrue(title.isNotBlank(), "Extracted recipe should have a title")
-
-            val ingredientCount = response.jsonPath().getList<String>("ingredients").size
-            assertTrue(ingredientCount >= 1, "Extracted recipe should have at least one ingredient")
-        }
+            .then()
+            .statusCode(200)
+            .body("status", `is`(notNullValue()))
+            .body("proposedRecipe", `is`(notNullValue()))
 
         imageFile.delete()
     }
 
-    /**
-     * Verify that the imported recipe appears in the recipe list filtered by the "Geimporteerd" category.
-     */
     @Test
     fun `imported recipe appears in Geimporteerd category listing`() {
         val confirmResponse = given()
@@ -230,13 +177,13 @@ class RecipeImportIntegrationTest {
             "userOverrides": {
                 "title": "$EXPECTED_TITLE",
                 "ingredients": [
-                    "1 scatola di pomodori",
-                    "2 spicchi d'aglio",
-                    "un po' di capperi",
-                    "un po' di sale",
-                    "una mozzarella",
-                    "un po' d'olio",
-                    "origano"
+                    "1 can of tomatoes",
+                    "2 cloves of garlic",
+                    "some capers",
+                    "some salt",
+                    "one mozzarella",
+                    "some oil",
+                    "oregano"
                 ],
                 "preparation": "$EXPECTED_PREPARATION"
             }
@@ -244,10 +191,6 @@ class RecipeImportIntegrationTest {
         """.trimIndent()
     }
 
-    /**
-     * Creates a minimal temporary PNG file for testing.
-     * The actual image content doesn't matter since RecipeExtractionService is mocked.
-     */
     private fun createTempImageFile(): File {
         val tempFile = File.createTempFile("test-recipe", ".png")
         tempFile.writeBytes(

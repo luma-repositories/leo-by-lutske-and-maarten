@@ -21,9 +21,10 @@ import java.time.Instant
 /**
  * REST resource for importing recipes from images via LLM-based extraction.
  *
- * The image is sent to a multimodal LLM (OpenAI, Claude, or vLLM) through
- * LangChain4j. The model extracts structured recipe data which is validated
- * and either stored directly or returned for user correction.
+ * Flow:
+ * 1. POST /import — extracts recipe data from image via LLM, always returns
+ *    the extraction result for user review (never auto-saves).
+ * 2. POST /import/confirm — user confirms/edits the extracted data, recipe is saved.
  */
 @Path("/api/recipes/import")
 class RecipeImportResource(
@@ -42,18 +43,19 @@ class RecipeImportResource(
     }
 
     /**
-     * Upload an image and attempt to extract a recipe via LLM.
+     * Upload an image and extract recipe data via LLM.
+     *
+     * Always returns 200 with the extraction result for user review.
+     * The recipe is NOT saved at this stage — the user must review and confirm.
      *
      * Returns:
-     * - 201 Created with RecipeDetailResponse if recipe was fully extracted and saved
-     * - 422 Unprocessable Entity with ImportNeedsMoreInfoResponse if extraction is incomplete
+     * - 200 OK with ImportExtractionResponse (proposed recipe, missing fields, warnings)
      * - 400 Bad Request if file validation fails
      * - 502 Bad Gateway if the LLM provider is unavailable
      */
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    @Transactional
     fun importFromImage(@RestForm("file") file: FileUpload): Response {
         // Validate file
         validateFile(file)
@@ -71,30 +73,23 @@ class RecipeImportResource(
                 .build()
         }
 
-        // If all required fields are present, create the recipe directly
-        if (extraction.isComplete()) {
-            val proposal = extractionToProposal(extraction)
-            val recipe = createRecipeFromProposal(proposal, extraction)
-            return Response.status(Response.Status.CREATED)
-                .entity(recipe.toDetailResponse())
-                .build()
-        }
+        // Always return extraction result for user review — never auto-save
+        val status = if (extraction.isComplete()) "COMPLETE" else "NEEDS_MORE_INFO"
 
-        // Otherwise, return needs-more-info
-        return Response.status(422)
-            .entity(
-                ImportNeedsMoreInfoResponse(
-                    rawModelResponse = extraction.rawModelResponse,
-                    proposedRecipe = extractionToProposal(extraction),
-                    missingFields = extraction.missingFields(),
-                    warnings = extraction.warnings
-                )
+        return Response.ok(
+            ImportExtractionResponse(
+                status = status,
+                rawModelResponse = extraction.rawModelResponse,
+                proposedRecipe = extractionToProposal(extraction),
+                missingFields = extraction.missingFields(),
+                warnings = extraction.warnings
             )
-            .build()
+        ).build()
     }
 
     /**
-     * Confirm and finalize an imported recipe after user provides missing info.
+     * Confirm and finalize an imported recipe after user review.
+     * This is the only endpoint that saves to the database.
      */
     @POST
     @Path("/confirm")
@@ -122,33 +117,30 @@ class RecipeImportResource(
         val mergedProposal = ProposedRecipeDto(
             title = title,
             ingredients = ingredients,
-            preparation = if (notes.isNullOrBlank()) preparation else "$preparation\n\nNotities: $notes",
+            preparation = if (notes.isNullOrBlank()) preparation else "$preparation\n\nNotes: $notes",
             categoryId = categoryId,
             description = overrides?.description ?: proposed.description,
             servings = overrides?.servings ?: proposed.servings,
             source = proposed.source
         )
 
-        val recipe = createRecipeFromProposal(mergedProposal, null)
+        val recipe = createRecipeFromProposal(mergedProposal)
         return Response.status(Response.Status.CREATED)
             .entity(recipe.toDetailResponse())
             .build()
     }
 
     private fun validateFile(file: FileUpload) {
-        // Check file size
         val fileSize = file.uploadedFile().toFile().length()
         if (fileSize > MAX_FILE_SIZE) {
             throw BadRequestException("File too large: ${fileSize / 1024 / 1024} MB. Maximum is 10 MB.")
         }
 
-        // Check content type
         val contentType = file.contentType()
         if (contentType != null && contentType !in ALLOWED_CONTENT_TYPES) {
             throw BadRequestException("Unsupported file type: $contentType. Allowed: PNG, JPG, JPEG, WEBP.")
         }
 
-        // Check file extension
         val fileName = file.fileName()
         val extension = fileName.substringAfterLast('.', "").lowercase()
         if (extension !in ALLOWED_EXTENSIONS) {
@@ -156,9 +148,6 @@ class RecipeImportResource(
         }
     }
 
-    /**
-     * Convert an [ExtractionResult] to a [ProposedRecipeDto].
-     */
     private fun extractionToProposal(extraction: ExtractionResult): ProposedRecipeDto {
         return ProposedRecipeDto(
             title = extraction.title,
@@ -171,33 +160,20 @@ class RecipeImportResource(
         )
     }
 
-    private fun createRecipeFromProposal(proposal: ProposedRecipeDto, extraction: ExtractionResult?): RecipeEntity {
+    private fun createRecipeFromProposal(proposal: ProposedRecipeDto): RecipeEntity {
         val categoryId = proposal.categoryId ?: DEFAULT_IMPORT_CATEGORY_ID
         val category = categoryRepository.findById(categoryId)
             ?: categoryRepository.findById(DEFAULT_IMPORT_CATEGORY_ID)
             ?: throw IllegalStateException("Default import category not found")
 
         val recipe = RecipeEntity()
-        recipe.title = proposal.title ?: "Naamloos recept"
+        recipe.title = proposal.title ?: "Untitled recipe"
         recipe.ingredients = proposal.ingredients?.joinToString("|") ?: ""
         recipe.preparation = proposal.preparation ?: ""
         recipe.category = category
         recipe.viewCount = 0
         recipe.source = proposal.source ?: "Imported from image"
         recipe.createdAt = Instant.now()
-
-        // Store extraction metadata as JSON if available
-        if (extraction != null) {
-            val metadata = buildString {
-                append("{")
-                append("\"provider\":\"${extraction.provider ?: "unknown"}\",")
-                append("\"model\":\"${extraction.model ?: "unknown"}\",")
-                append("\"warnings\":")
-                append(extraction.warnings.joinToString(",", "[", "]") { "\"${it.replace("\"", "\\\"")}\"" })
-                append("}")
-            }
-            recipe.importMetadata = metadata
-        }
 
         recipeRepository.persist(recipe)
         return recipe

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  type ImportNeedsMoreInfoResponse,
+  type ImportExtractionResponse,
   type ImportConfirmRequest,
   importRecipeImage,
   confirmRecipeImport,
@@ -20,8 +20,8 @@ export default function ImportRecipePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Needs-more-info state
-  const [needsMoreInfo, setNeedsMoreInfo] = useState<ImportNeedsMoreInfoResponse | null>(null);
+  // Extraction result / review state
+  const [extraction, setExtraction] = useState<ImportExtractionResponse | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editIngredients, setEditIngredients] = useState('');
   const [editPreparation, setEditPreparation] = useState('');
@@ -34,9 +34,8 @@ export default function ImportRecipePage() {
 
     setSelectedFile(file);
     setError(null);
-    setNeedsMoreInfo(null);
+    setExtraction(null);
 
-    // Create preview URL
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
   }
@@ -51,10 +50,8 @@ export default function ImportRecipePage() {
 
     setLoading(false);
 
-    if (result.status === 'created') {
-      navigate(`/recipes/${result.recipe.id}`);
-    } else if (result.status === 'needs_more_info') {
-      setNeedsMoreInfo(result.data);
+    if (result.status === 'extracted') {
+      setExtraction(result.data);
       // Pre-fill form with proposed values
       setEditTitle(result.data.proposedRecipe.title ?? '');
       setEditIngredients(
@@ -68,7 +65,7 @@ export default function ImportRecipePage() {
   }
 
   async function handleConfirm() {
-    if (!needsMoreInfo) return;
+    if (!extraction) return;
 
     setConfirming(true);
     setError(null);
@@ -79,8 +76,8 @@ export default function ImportRecipePage() {
       .filter((s) => s.length > 0);
 
     const request: ImportConfirmRequest = {
-      rawModelResponse: needsMoreInfo.rawModelResponse,
-      proposedRecipe: needsMoreInfo.proposedRecipe,
+      rawModelResponse: extraction.rawModelResponse,
+      proposedRecipe: extraction.proposedRecipe,
       userOverrides: {
         title: editTitle || null,
         ingredients: ingredientsList.length > 0 ? ingredientsList : null,
@@ -103,7 +100,7 @@ export default function ImportRecipePage() {
     setSelectedFile(null);
     setPreviewUrl(null);
     setError(null);
-    setNeedsMoreInfo(null);
+    setExtraction(null);
     setEditTitle('');
     setEditIngredients('');
     setEditPreparation('');
@@ -129,8 +126,8 @@ export default function ImportRecipePage() {
         </div>
       )}
 
-      {/* Upload section */}
-      {!needsMoreInfo && (
+      {/* Upload section — shown when no extraction result yet */}
+      {!extraction && (
         <div className="import-upload" id="import-upload-section">
           <div className="import-upload__dropzone" id="import-dropzone">
             <input
@@ -151,7 +148,7 @@ export default function ImportRecipePage() {
             <div className="import-upload__preview" id="import-preview">
               <img
                 src={previewUrl}
-                alt="Voorbeeld van het gekozen recept"
+                alt="Preview of selected recipe"
                 className="import-upload__preview-img"
                 id="import-preview-img"
               />
@@ -190,15 +187,25 @@ export default function ImportRecipePage() {
         </div>
       )}
 
-      {/* Needs more info section */}
-      {needsMoreInfo && (
+      {/* Review / edit section — always shown after extraction */}
+      {extraction && (
         <div className="import-review" id="import-review-section">
+          {/* Status banner */}
+          <div
+            className={`import-review__status import-review__status--${extraction.status === 'COMPLETE' ? 'complete' : 'incomplete'}`}
+            id="import-status-banner"
+          >
+            {extraction.status === 'COMPLETE'
+              ? t('import.extractionComplete')
+              : t('import.extractionIncomplete')}
+          </div>
+
           {/* Warnings */}
-          {needsMoreInfo.warnings.length > 0 && (
+          {extraction.warnings.length > 0 && (
             <div className="import-review__warnings" id="import-warnings">
               <h3>{t('import.warningsTitle')}</h3>
               <ul>
-                {needsMoreInfo.warnings.map((w, i) => (
+                {extraction.warnings.map((w, i) => (
                   <li key={i} id={`import-warning-${i}`}>{w}</li>
                 ))}
               </ul>
@@ -206,27 +213,29 @@ export default function ImportRecipePage() {
           )}
 
           {/* Missing fields indicator */}
-          <div className="import-review__missing" id="import-missing-fields">
-            <h3>{t('import.missingFieldsTitle')}</h3>
-            <p>
-              {needsMoreInfo.missingFields.map((f) => {
-                return t(`import.fieldLabels.${f}`) || f;
-              }).join(', ')}
-            </p>
-          </div>
+          {extraction.missingFields.length > 0 && (
+            <div className="import-review__missing" id="import-missing-fields">
+              <h3>{t('import.missingFieldsTitle')}</h3>
+              <p>
+                {extraction.missingFields.map((f) => {
+                  return t(`import.fieldLabels.${f}`) || f;
+                }).join(', ')}
+              </p>
+            </div>
+          )}
 
-          {/* Raw model response */}
-          {needsMoreInfo.rawModelResponse && (
-            <div className="import-review__raw" id="import-raw-text-section">
-              <h3>{t('import.rawResponseTitle')}</h3>
+          {/* Raw model response (collapsible) */}
+          {extraction.rawModelResponse && (
+            <details className="import-review__raw" id="import-raw-text-section">
+              <summary>{t('import.rawResponseTitle')}</summary>
               <textarea
                 readOnly
-                value={needsMoreInfo.rawModelResponse}
+                value={extraction.rawModelResponse}
                 className="import-review__raw-textarea"
                 id="import-raw-text"
                 rows={8}
               />
-            </div>
+            </details>
           )}
 
           {/* Editable form */}
@@ -239,7 +248,7 @@ export default function ImportRecipePage() {
             <input
               type="text"
               id="import-edit-title"
-              className="import-review__input"
+              className={`import-review__input ${extraction.missingFields.includes('title') ? 'import-review__input--missing' : ''}`}
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
               placeholder={t('import.placeholderTitle')}
@@ -250,7 +259,7 @@ export default function ImportRecipePage() {
             </label>
             <textarea
               id="import-edit-ingredients"
-              className="import-review__textarea"
+              className={`import-review__textarea ${extraction.missingFields.includes('ingredients') ? 'import-review__textarea--missing' : ''}`}
               value={editIngredients}
               onChange={(e) => setEditIngredients(e.target.value)}
               placeholder={t('import.placeholderIngredients')}
@@ -262,7 +271,7 @@ export default function ImportRecipePage() {
             </label>
             <textarea
               id="import-edit-preparation"
-              className="import-review__textarea"
+              className={`import-review__textarea ${extraction.missingFields.includes('preparation') ? 'import-review__textarea--missing' : ''}`}
               value={editPreparation}
               onChange={(e) => setEditPreparation(e.target.value)}
               placeholder={t('import.placeholderPreparation')}

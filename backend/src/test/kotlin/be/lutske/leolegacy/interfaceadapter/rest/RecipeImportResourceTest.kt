@@ -13,7 +13,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
 import java.io.File
 
 /**
@@ -50,7 +49,7 @@ class RecipeImportResourceTest {
     }
 
     @Test
-    fun `POST import with valid image creates recipe when fully extracted`() {
+    fun `POST import with valid image returns 200 with extraction for review`() {
         val tempFile = createTempImageFile()
 
         given()
@@ -58,18 +57,18 @@ class RecipeImportResourceTest {
             .`when`()
             .post("/api/recipes/import")
             .then()
-            .statusCode(201)
-            .body("id", `is`(greaterThanOrEqualTo(1)))
-            .body("title", `is`("Chocolate Mousse"))
-            .body("ingredients.size()", `is`(3))
-            .body("preparation", `is`(notNullValue()))
-            .body("categoryName", `is`("Geimporteerd"))
+            .statusCode(200)
+            .body("status", `is`("COMPLETE"))
+            .body("proposedRecipe.title", `is`("Chocolate Mousse"))
+            .body("proposedRecipe.ingredients.size()", `is`(3))
+            .body("proposedRecipe.preparation", `is`(notNullValue()))
+            .body("missingFields.size()", `is`(0))
 
         tempFile.delete()
     }
 
     @Test
-    fun `POST import returns 422 when extraction is incomplete`() {
+    fun `POST import returns NEEDS_MORE_INFO when extraction is incomplete`() {
         `when`(extractionService.extractRecipeFromImage(any(), any())).thenReturn(
             ExtractionResult(
                 title = "Some Recipe",
@@ -89,7 +88,7 @@ class RecipeImportResourceTest {
             .`when`()
             .post("/api/recipes/import")
             .then()
-            .statusCode(422)
+            .statusCode(200)
             .body("status", `is`("NEEDS_MORE_INFO"))
             .body("rawModelResponse", `is`(notNullValue()))
             .body("proposedRecipe", `is`(notNullValue()))
@@ -114,6 +113,24 @@ class RecipeImportResourceTest {
             .then()
             .statusCode(502)
             .body("error", `is`(notNullValue()))
+
+        tempFile.delete()
+    }
+
+    @Test
+    fun `POST import never auto-saves - complete extraction returns 200 not 201`() {
+        // Even with a fully complete extraction, the response should be 200 (not 201)
+        val tempFile = createTempImageFile()
+
+        given()
+            .multiPart("file", tempFile, "image/png")
+            .`when`()
+            .post("/api/recipes/import")
+            .then()
+            .statusCode(200)
+            .body("status", `is`("COMPLETE"))
+            // Should NOT have an "id" field — recipe is not saved yet
+            .body("proposedRecipe.title", `is`("Chocolate Mousse"))
 
         tempFile.delete()
     }
@@ -196,7 +213,7 @@ class RecipeImportResourceTest {
     }
 
     @Test
-    fun `POST import with empty extraction returns 422`() {
+    fun `POST import with empty extraction returns NEEDS_MORE_INFO`() {
         `when`(extractionService.extractRecipeFromImage(any(), any())).thenReturn(
             ExtractionResult(
                 warnings = listOf("Image does not appear to contain a recipe"),
@@ -213,25 +230,21 @@ class RecipeImportResourceTest {
             .`when`()
             .post("/api/recipes/import")
             .then()
-            .statusCode(422)
+            .statusCode(200)
             .body("status", `is`("NEEDS_MORE_INFO"))
             .body("missingFields.size()", `is`(3))
+            .body("warnings[0]", `is`("Image does not appear to contain a recipe"))
 
         tempFile.delete()
     }
 
-    /**
-     * Creates a minimal temporary PNG file for testing.
-     * The actual image content doesn't matter since RecipeExtractionService is mocked.
-     */
     private fun createTempImageFile(): File {
         val tempFile = File.createTempFile("test-recipe", ".png")
-        // Write minimal PNG header bytes so it's a valid-ish file
         tempFile.writeBytes(
             byteArrayOf(
-                0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
-                0x00, 0x00, 0x00, 0x0D, // IHDR length
-                0x49, 0x48, 0x44, 0x52  // IHDR type
+                0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+                0x00, 0x00, 0x00, 0x0D,
+                0x49, 0x48, 0x44, 0x52
             )
         )
         return tempFile

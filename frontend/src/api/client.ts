@@ -74,8 +74,12 @@ export interface ProposedRecipeDto {
   tags?: string[] | null;
 }
 
-export interface ImportNeedsMoreInfoResponse {
-  status: 'NEEDS_MORE_INFO';
+/**
+ * Response from POST /api/recipes/import (always HTTP 200).
+ * Status: "COMPLETE" | "NEEDS_MORE_INFO"
+ */
+export interface ImportExtractionResponse {
+  status: 'COMPLETE' | 'NEEDS_MORE_INFO';
   rawModelResponse?: string | null;
   proposedRecipe: ProposedRecipeDto;
   missingFields: string[];
@@ -99,11 +103,10 @@ export interface ImportConfirmRequest {
 }
 
 export type ImportResult =
-  | { status: 'created'; recipe: RecipeDetailResponse }
-  | { status: 'needs_more_info'; data: ImportNeedsMoreInfoResponse }
+  | { status: 'extracted'; data: ImportExtractionResponse }
   | { status: 'error'; message: string };
 
-/** Upload an image for AI-based recipe import. */
+/** Upload an image for AI-based recipe extraction. Always returns extraction for review. */
 export async function importRecipeImage(file: File): Promise<ImportResult> {
   const formData = new FormData();
   formData.append('file', file);
@@ -113,14 +116,9 @@ export async function importRecipeImage(file: File): Promise<ImportResult> {
     body: formData,
   });
 
-  if (res.status === 201) {
-    const recipe: RecipeDetailResponse = await res.json();
-    return { status: 'created', recipe };
-  }
-
-  if (res.status === 422) {
-    const data: ImportNeedsMoreInfoResponse = await res.json();
-    return { status: 'needs_more_info', data };
+  if (res.status === 200) {
+    const data: ImportExtractionResponse = await res.json();
+    return { status: 'extracted', data };
   }
 
   const errorBody = await res.json().catch(() => ({ error: 'Unknown error' }));

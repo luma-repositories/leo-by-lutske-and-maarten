@@ -150,21 +150,19 @@ describe('API client', () => {
   });
 
   describe('importRecipeImage', () => {
-    it('returns created status with recipe on 201', async () => {
-      const mockRecipe = {
-        id: 99,
-        title: 'Imported Recipe',
-        ingredients: ['flour', 'eggs'],
-        preparation: 'Mix and bake.',
-        categoryId: 15,
-        categoryName: 'Geimporteerd',
-        viewCount: 0,
+    it('returns extracted status with data on 200', async () => {
+      const mockData = {
+        status: 'COMPLETE',
+        rawModelResponse: '{"title":"Test"}',
+        proposedRecipe: { title: 'Test', ingredients: ['flour'], preparation: 'Mix.' },
+        missingFields: [],
+        warnings: [],
       };
 
       vi.spyOn(globalThis, 'fetch').mockResolvedValue({
         ok: true,
-        status: 201,
-        json: () => Promise.resolve(mockRecipe),
+        status: 200,
+        json: () => Promise.resolve(mockData),
       } as Response);
 
       const file = new File(['image-data'], 'recipe.jpg', { type: 'image/jpeg' });
@@ -174,10 +172,10 @@ describe('API client', () => {
         method: 'POST',
         body: expect.any(FormData),
       });
-      expect(result).toEqual({ status: 'created', recipe: mockRecipe });
+      expect(result).toEqual({ status: 'extracted', data: mockData });
     });
 
-    it('returns needs_more_info status on 422', async () => {
+    it('returns extracted status with NEEDS_MORE_INFO on 200', async () => {
       const mockData = {
         status: 'NEEDS_MORE_INFO',
         rawModelResponse: '{"title":"Test"}',
@@ -187,18 +185,18 @@ describe('API client', () => {
       };
 
       vi.spyOn(globalThis, 'fetch').mockResolvedValue({
-        ok: false,
-        status: 422,
+        ok: true,
+        status: 200,
         json: () => Promise.resolve(mockData),
       } as Response);
 
       const file = new File(['image-data'], 'recipe.png', { type: 'image/png' });
       const result = await importRecipeImage(file);
 
-      expect(result).toEqual({ status: 'needs_more_info', data: mockData });
+      expect(result).toEqual({ status: 'extracted', data: mockData });
     });
 
-    it('returns error status on other failure codes', async () => {
+    it('returns error status on 400', async () => {
       vi.spyOn(globalThis, 'fetch').mockResolvedValue({
         ok: false,
         status: 400,
@@ -234,7 +232,6 @@ describe('API client', () => {
       const file = new File(['image-data'], 'recipe.jpg', { type: 'image/jpeg' });
       const result = await importRecipeImage(file);
 
-      // The catch block in importRecipeImage falls back to { error: 'Unknown error' }
       expect(result).toEqual({ status: 'error', message: 'Unknown error' });
     });
   });
