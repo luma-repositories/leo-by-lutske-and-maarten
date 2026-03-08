@@ -4,7 +4,7 @@ A full-stack recipe application migrating the legacy leo-legacy.be cooking websi
 
 ## Prerequisites
 
-- Java 21+
+- Java 25+
 - Node.js 18+ and npm
 - Podman (or Docker) for local PostgreSQL
 - No global Gradle installation needed (uses Gradle wrapper)
