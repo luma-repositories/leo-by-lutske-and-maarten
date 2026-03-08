@@ -88,7 +88,7 @@ class ChatModelProducer(
             .apiKey(apiKey)
             .modelName(modelName)
             .temperature(temperature)
-            .maxTokens(maxTokens)
+            .maxCompletionTokens(maxTokens)
             .timeout(Duration.ofSeconds(timeoutSeconds))
             .logRequests(false)
             .logResponses(false)

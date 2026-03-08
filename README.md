@@ -74,11 +74,14 @@ This starts a PostgreSQL 17 container on port 5432 with persistent volume.
 
 ### 2. Configure AI Provider
 
-Set your AI API key as an environment variable:
+Copy the environment template and fill in your API key:
 
 ```bash
-export AI_API_KEY=sk-your-openai-key-here
+cp backend/.env.example backend/.env
+# Edit backend/.env and set AI_API_KEY to your OpenAI or Anthropic key
 ```
+
+Quarkus reads the `backend/.env` file automatically at startup (via SmallRye Config). The `.env` file is gitignored so secrets are never committed.
 
 The default provider is OpenAI with `gpt-4o`. To use a different provider, edit `backend/src/main/resources/application.properties` or use Quarkus profiles:
 
