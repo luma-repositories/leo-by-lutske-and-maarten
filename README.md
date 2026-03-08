@@ -4,8 +4,8 @@ A Quarkus application serving the legacy leo-legacy.be recipe website as static 
 
 ## Prerequisites
 
-- Java 21+
-- No global Gradle installation needed (uses Gradle wrapper)
+- Java 25+
+- No global Gradle installation needed (uses Gradle wrapper 9.1)
 
 ## Project Structure
 
