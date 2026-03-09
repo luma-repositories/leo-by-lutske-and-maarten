@@ -12,7 +12,6 @@ repositories {
 
 // Retrieve version catalogue from platform file
 val libs: Map<String, String> by extra
-val versions: Map<String, String> by extra
 
 dependencies {
     // Quarkus BOM — all Quarkus dependency versions are managed here
@@ -32,7 +31,6 @@ dependencies {
     testImplementation(libs["quarkusJunit5"]!!)
     testImplementation(libs["quarkusTestH2"]!!)
     testImplementation(libs["restAssured"]!!)
-    testImplementation(libs["quarkusTestH2"]!!)
 }
 
 group = "be.lutske"
