@@ -17,6 +17,7 @@ class PostgresIntegrationTestProfile : QuarkusTestProfile {
             "quarkus.datasource.username" to "leo",
             "quarkus.datasource.password" to "leo_secret",
             "quarkus.datasource.jdbc.url" to "jdbc:postgresql://localhost:5432/leo_legacy",
+            "quarkus.datasource.jdbc.acquisition-timeout" to "5",
 
             // Flyway: clean + migrate to get a fresh schema each test run
             "quarkus.flyway.migrate-at-start" to "true",
