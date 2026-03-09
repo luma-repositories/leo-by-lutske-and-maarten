@@ -1,6 +1,9 @@
 .idea
 .claude
 .opencode
+.project
+.settings
+.kotlin
 
 # Compiled class file
 *.class
@@ -30,6 +33,7 @@ replay_pid*
 
 # Gradle
 build/
+target/
 .gradle/
 
 # Quarkus

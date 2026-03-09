@@ -2,9 +2,7 @@
 apply(from = "${rootProject.projectDir}/platform/quarkus-platform.gradle")
 
 plugins {
-    kotlin("jvm") version "2.0.21"
-    kotlin("plugin.allopen") version "2.0.21"
-    kotlin("plugin.jpa") version "2.0.21"
+    java
     id("io.quarkus")
 }
 
@@ -24,7 +22,6 @@ dependencies {
     implementation(libs["quarkusRest"]!!)
     implementation(libs["quarkusRestJackson"]!!)
     implementation(libs["quarkusArc"]!!)
-    implementation(libs["quarkusKotlin"]!!)
 
     // Database
     implementation(libs["quarkusHibernateOrm"]!!)
@@ -41,22 +38,16 @@ group = "be.lutske"
 version = "1.0.0-SNAPSHOT"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
 }
 
 tasks.withType<Test> {
     systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
 }
 
-allOpen {
-    annotation("jakarta.ws.rs.Path")
-    annotation("jakarta.enterprise.context.ApplicationScoped")
-    annotation("jakarta.persistence.Entity")
-    annotation("io.quarkus.test.junit.QuarkusTest")
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.jvmTarget = "21"
-    kotlinOptions.javaParameters = true
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
+    options.compilerArgs.add("-parameters")
 }
