@@ -4,25 +4,30 @@
 
 ## Summary
 
-The Quarkus backend has been migrated from Kotlin to Java 25. All source files and tests have been rewritten in Java, using modern Java features such as records for DTOs. Kotlin plugins, dependencies, and configuration have been fully removed from the build.
+The Quarkus backend has been fully migrated from Kotlin to Java 25. All source files — entities, repositories, REST resources, DTOs, and tests — have been rewritten in Java, using modern features such as records for DTOs. Kotlin plugins, dependencies, and configuration have been completely removed.
 
 ## Changes
 
-- **Source files**: Converted `VersionResource.kt` → `VersionResource.java`, `VersionResponse.kt` → `VersionResponse.java` (now a Java record)
-- **Test files**: Converted `VersionResourceTest.kt` → `VersionResourceTest.java`, `HomePageAvailabilityTest.kt` → `HomePageAvailabilityTest.java`
-- **build.gradle.kts**: Removed Kotlin plugins (`kotlin("jvm")`, `kotlin("plugin.allopen")`), removed `quarkus-kotlin` dependency, removed `allOpen` and `KotlinCompile` config blocks. Uses Java toolchain with language version 25.
-- **platform/quarkus-platform.gradle**: Removed Kotlin version and `quarkusKotlin` library entry. Upgraded Quarkus from 3.17.7 to 3.32.2.
-- **gradle.properties**: Removed `kotlin.code.style`. Updated `quarkusPluginVersion` to 3.32.2.
-- **gradle-wrapper.properties**: Upgraded Gradle from 8.12 to 9.3.1 (required for Java 25 support).
-- **README.md**: Updated prerequisites to Java 25, added full SDKMAN installation and configuration guide, updated project structure to reflect Java sources.
+- **Entities**: `RecipeEntity.kt` → `RecipeEntity.java`, `CategoryEntity.kt` → `CategoryEntity.java` (plain JPA entities)
+- **Repositories**: `RecipeRepository.kt` → `RecipeRepository.java`, `CategoryRepository.kt` → `CategoryRepository.java` (Java Panache)
+- **REST resources**: `RecipeResource.kt` → `RecipeResource.java`, `CategoryResource.kt` → `CategoryResource.java`, `VersionResource.kt` → `VersionResource.java`
+- **DTOs**: All Kotlin `data class` → Java `record` (`RecipeDetailResponse`, `RecipeSummaryResponse`, `CategoryResponse`, `VersionResponse`)
+- **Tests**: All Kotlin tests → Java (`RecipeResourceTest`, `CategoryResourceTest`, `VersionResourceTest`)
+- **Removed**: `HomePageAvailabilityTest` (static site no longer exists in webapp branch)
+- **platform/quarkus-platform.gradle**: Changed `quarkus-hibernate-orm-panache-kotlin` → `quarkus-hibernate-orm-panache`
+- **build.gradle.kts**: Added database dependencies, Java 25 toolchain, removed all Kotlin config
+- **Gradle**: 8.12 → 9.3.1 (required for Java 25 support)
+- **Quarkus**: 3.17.7 → 3.32.2 (required for Java 25 support)
+- **README.md**: Full webapp documentation — database setup, compose, frontend, all API endpoints, SDKMAN guide, tech stack
 
 ## Dependency/Version Changes
 
 | Component | Before | After |
 |-----------|--------|-------|
-| Java | 21 | 25 |
+| Java | 21 (Kotlin) | 25 (Java) |
 | Gradle | 8.12 | 9.3.1 |
 | Quarkus | 3.17.7 | 3.32.2 |
+| Panache | panache-kotlin | panache (Java) |
 | Kotlin | 2.0.21 | Removed |
 
 ## User Impact
@@ -34,8 +39,7 @@ The Quarkus backend has been migrated from Kotlin to Java 25. All source files a
 ## How to Verify
 
 ```bash
-sdk install java 25.0.2-open
 sdk use java 25.0.2-open
-java -version          # Should show Java 25
-./gradlew :backend:build   # Should compile and pass all tests
+./gradlew :backend:build    # All tests pass
+cd frontend && npm run test  # All tests pass
 ```

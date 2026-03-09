@@ -23,7 +23,7 @@ ext {
         quarkusArc              : 'io.quarkus:quarkus-arc',
 
         // Database
-        quarkusHibernateOrm     : 'io.quarkus:quarkus-hibernate-orm-panache-kotlin',
+        quarkusHibernateOrm     : 'io.quarkus:quarkus-hibernate-orm-panache',
         quarkusJdbcPostgresql   : 'io.quarkus:quarkus-jdbc-postgresql',
         quarkusFlyway           : 'io.quarkus:quarkus-flyway',
 
