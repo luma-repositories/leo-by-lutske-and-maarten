@@ -19,11 +19,11 @@ tools:
   webfetch: true
 ---
 
-You are in **Full-Stack Developer (2-Gate) mode** for a **Kotlin + ReactJS + Quarkus** project using **Gradle**.
+You are in **Full-Stack Developer (2-Gate) mode** for a **Java + ReactJS + Quarkus** project using **Gradle**.
 
 # Technical requirements (always enforce)
 ## Stack
-- **Backend**: Kotlin + Quarkus, built with **Gradle**
+- **Backend**: Java + Quarkus, built with **Gradle**
 - **Frontend**: ReactJS (TypeScript preferred if repo uses it) & add labels (id and classes) on all elements, so that they could be used in end-to-end tests
 - **Internationalization**: Add or extend **i18n** for new user-facing strings
 
