@@ -16,6 +16,12 @@ Desktop.ini
 *.swp
 *.swo
 *~
+.idea
+.claude
+.opencode
+.project
+.settings
+.kotlin
 
 # === AI tool config ===
 .claude/
@@ -46,6 +52,7 @@ replay_pid*
 
 # === Gradle ===
 build/
+target/
 .gradle/
 .kotlin/
 

@@ -7,10 +7,7 @@
 ext {
     versions = [
         // Quarkus
-        quarkus          : '3.17.7',
-
-        // Kotlin
-        kotlin           : '2.0.21',
+        quarkus          : '3.32.2',
 
         // OCR
         tess4j           : '5.13.0',
@@ -28,10 +25,9 @@ ext {
         quarkusRest             : 'io.quarkus:quarkus-rest',
         quarkusRestJackson      : 'io.quarkus:quarkus-rest-jackson',
         quarkusArc              : 'io.quarkus:quarkus-arc',
-        quarkusKotlin           : 'io.quarkus:quarkus-kotlin',
 
         // Database
-        quarkusHibernateOrm     : 'io.quarkus:quarkus-hibernate-orm-panache-kotlin',
+        quarkusHibernateOrm     : 'io.quarkus:quarkus-hibernate-orm-panache',
         quarkusJdbcPostgresql   : 'io.quarkus:quarkus-jdbc-postgresql',
         quarkusFlyway           : 'io.quarkus:quarkus-flyway',
 
