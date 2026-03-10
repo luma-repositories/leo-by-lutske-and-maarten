@@ -12,7 +12,6 @@ repositories {
 
 // Retrieve version catalogue from platform file
 val libs: Map<String, String> by extra
-val versions: Map<String, String> by extra
 
 dependencies {
     // Quarkus BOM — all Quarkus dependency versions are managed here
@@ -28,10 +27,12 @@ dependencies {
     implementation(libs["quarkusJdbcPostgresql"]!!)
     implementation(libs["quarkusFlyway"]!!)
 
+    // OCR
+    implementation(libs["tess4j"]!!)
+
     // Testing
     testImplementation(libs["quarkusJunit5"]!!)
     testImplementation(libs["quarkusMockito"]!!)
-    testImplementation(libs["restAssured"]!!)
     testImplementation(libs["quarkusTestH2"]!!)
     testImplementation(libs["restAssured"]!!)
 }
@@ -47,6 +48,9 @@ java {
 
 tasks.withType<Test> {
     systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
+    useJUnitPlatform {
+        excludeTags("integration")
+    }
 }
 
 tasks.withType<JavaCompile> {

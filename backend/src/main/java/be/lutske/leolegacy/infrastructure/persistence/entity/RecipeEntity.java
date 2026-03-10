@@ -10,6 +10,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "recipe")
 public class RecipeEntity {
@@ -32,6 +34,12 @@ public class RecipeEntity {
 
     @Column(name = "view_count")
     private int viewCount;
+
+    @Column(name = "source", length = 100)
+    private String source;
+
+    @Column(name = "created_at")
+    private Instant createdAt;
 
     public RecipeEntity() {
     }
@@ -91,5 +99,21 @@ public class RecipeEntity {
 
     public void setViewCount(int viewCount) {
         this.viewCount = viewCount;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
     }
 }
