@@ -1,6 +1,7 @@
 package be.lutske.leolegacy.interfaceadapter.rest;
 
-import be.lutske.leolegacy.application.service.OcrService;
+import be.lutske.leolegacy.application.service.ExtractionResult;
+import be.lutske.leolegacy.infrastructure.ai.LangChain4jRecipeExtractionService;
 import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,45 +10,49 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
  * Integration tests for the recipe import endpoints.
- * OcrService is mocked since Tesseract is not available in test environment.
+ * RecipeExtractionService is mocked since no real AI provider is available in test environment.
  */
 @QuarkusTest
 class RecipeImportResourceTest {
 
-    OcrService ocrService;
+    LangChain4jRecipeExtractionService extractionService;
 
     @BeforeEach
     void setup() {
-        ocrService = mock(OcrService.class);
-        when(ocrService.extractText(any())).thenReturn("""
-                Chocolate Mousse
-                
-                Ingredients:
-                200 g dark chocolate
-                4 eggs
-                50 g sugar
-                
-                Instructions:
-                Melt the chocolate au bain-marie.
-                Separate the eggs.
-                Whip the egg whites with sugar.
-                Fold into the chocolate.""");
-        QuarkusMock.installMockForType(ocrService, OcrService.class);
+        extractionService = mock(LangChain4jRecipeExtractionService.class);
+        when(extractionService.extractRecipeFromImage(any(), anyString())).thenReturn(
+                new ExtractionResult(
+                        "Chocolate Mousse",
+                        "A rich chocolate dessert",
+                        "4 personen",
+                        List.of("200 g dark chocolate", "4 eggs", "50 g sugar"),
+                        List.of("Melt the chocolate au bain-marie.",
+                                "Separate the eggs.",
+                                "Whip the egg whites with sugar.",
+                                "Fold into the chocolate."),
+                        null, null,
+                        List.of(),
+                        "{\"title\":\"Chocolate Mousse\"}",
+                        "openai", "gpt-4o"
+                ));
+        QuarkusMock.installMockForType(extractionService, LangChain4jRecipeExtractionService.class);
     }
 
     @Test
-    void postImportWithValidImageCreatesRecipeWhenFullyParsed() throws IOException {
+    void postImportWithValidImageCreatesRecipeWhenFullyExtracted() throws IOException {
         File tempFile = createTempImageFile();
 
         given()
@@ -66,12 +71,14 @@ class RecipeImportResourceTest {
     }
 
     @Test
-    void postImportReturns422WhenRecipeIsIncomplete() throws IOException {
-        when(ocrService.extractText(any())).thenReturn("""
-                Some random text without clear structure
-                that doesn't look like a recipe at all
-                just some words and sentences""");
-        QuarkusMock.installMockForType(ocrService, OcrService.class);
+    void postImportReturns422WhenExtractionIsIncomplete() throws IOException {
+        when(extractionService.extractRecipeFromImage(any(), anyString())).thenReturn(
+                new ExtractionResult(
+                        null, null, null, null, null, null, null,
+                        List.of("Image does not appear to contain a recipe"),
+                        "{}", "openai", "gpt-4o"
+                ));
+        QuarkusMock.installMockForType(extractionService, LangChain4jRecipeExtractionService.class);
 
         File tempFile = createTempImageFile();
 
@@ -82,9 +89,11 @@ class RecipeImportResourceTest {
                 .then()
                 .statusCode(422)
                 .body("status", is("NEEDS_MORE_INFO"))
-                .body("rawText", is(notNullValue()))
+                .body("rawModelResponse", is(notNullValue()))
                 .body("proposedRecipe", is(notNullValue()))
-                .body("missingFields.size()", greaterThanOrEqualTo(1));
+                .body("missingFields.size()", greaterThanOrEqualTo(1))
+                .body("provider", is("openai"))
+                .body("model", is("gpt-4o"));
 
         tempFile.delete();
     }
@@ -95,11 +104,10 @@ class RecipeImportResourceTest {
                 .contentType("application/json")
                 .body("""
                         {
-                            "rawText": "some ocr text",
                             "proposedRecipe": {
                                 "title": "Test Recipe",
                                 "ingredients": ["100 g flour", "2 eggs"],
-                                "preparation": "Mix and bake."
+                                "steps": ["Mix ingredients.", "Bake at 180C."]
                             }
                         }""")
                 .when()
@@ -109,7 +117,7 @@ class RecipeImportResourceTest {
                 .body("id", is(greaterThanOrEqualTo(1)))
                 .body("title", is("Test Recipe"))
                 .body("ingredients.size()", is(2))
-                .body("preparation", is("Mix and bake."));
+                .body("preparation", is(notNullValue()));
     }
 
     @Test
@@ -118,16 +126,15 @@ class RecipeImportResourceTest {
                 .contentType("application/json")
                 .body("""
                         {
-                            "rawText": "some ocr text",
                             "proposedRecipe": {
                                 "title": "Original Title",
                                 "ingredients": ["old ingredient"],
-                                "preparation": "old steps"
+                                "steps": ["old step"]
                             },
                             "userOverrides": {
                                 "title": "Corrected Title",
                                 "ingredients": ["200 g chocolate", "4 eggs", "50 g sugar"],
-                                "preparation": "Corrected preparation steps.",
+                                "steps": ["Corrected step 1.", "Corrected step 2."],
                                 "notes": "User added this note"
                             }
                         }""")
@@ -145,10 +152,9 @@ class RecipeImportResourceTest {
                 .contentType("application/json")
                 .body("""
                         {
-                            "rawText": "some text",
                             "proposedRecipe": {
                                 "ingredients": ["flour"],
-                                "preparation": "bake"
+                                "steps": ["bake"]
                             }
                         }""")
                 .when()
@@ -158,9 +164,10 @@ class RecipeImportResourceTest {
     }
 
     @Test
-    void postImportWithEmptyOcrTextReturns422() throws IOException {
-        when(ocrService.extractText(any())).thenReturn("");
-        QuarkusMock.installMockForType(ocrService, OcrService.class);
+    void postImportWithEmptyExtractionReturns422() throws IOException {
+        when(extractionService.extractRecipeFromImage(any(), anyString())).thenReturn(
+                new ExtractionResult());
+        QuarkusMock.installMockForType(extractionService, LangChain4jRecipeExtractionService.class);
 
         File tempFile = createTempImageFile();
 
@@ -178,7 +185,7 @@ class RecipeImportResourceTest {
 
     /**
      * Creates a minimal temporary PNG file for testing.
-     * The actual image content doesn't matter since OcrService is mocked.
+     * The actual image content doesn't matter since RecipeExtractionService is mocked.
      */
     private File createTempImageFile() throws IOException {
         File tempFile = File.createTempFile("test-recipe", ".png");

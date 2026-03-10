@@ -41,6 +41,9 @@ public class RecipeEntity {
     @Column(name = "created_at")
     private Instant createdAt;
 
+    @Column(name = "import_metadata", columnDefinition = "TEXT")
+    private String importMetadata;
+
     public RecipeEntity() {
     }
 
@@ -115,5 +118,13 @@ public class RecipeEntity {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getImportMetadata() {
+        return importMetadata;
+    }
+
+    public void setImportMetadata(String importMetadata) {
+        this.importMetadata = importMetadata;
     }
 }

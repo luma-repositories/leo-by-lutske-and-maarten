@@ -18,8 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Full end-to-end integration test for recipe import from image.
  *
  * Prerequisites:
- * - {@code podman compose up -d} must be running
- * - Tesseract must be installed ({@code brew install tesseract})
+ * - {@code podman compose up -d} must be running (PostgreSQL)
+ * - An AI API key must be configured (e.g. via {@code backend/.env})
  */
 @QuarkusTest
 @TestProfile(PostgresIntegrationTestProfile.class)
@@ -27,13 +27,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RecipeImportIntegrationTest {
 
     private static final String EXPECTED_TITLE = "Scaloppine alla pizzaiola";
-    private static final String EXPECTED_PREPARATION =
+    private static final String EXPECTED_PREPARATION_STEP =
             "Si mette in una pentola il pomodoro e l'aglio, i capperi, il sale, l'olio, " +
             "le scaloppine ed infine la mozzarella e l'origano. " +
             "Lasciar asciugare il pomodoro e cuocere la carne. (cott. 1 ora)";
 
     @Test
-    void fullImportFlowUploadHandwrittenImageAndVerifyRecipeIsPersistedInDatabase() {
+    void fullImportFlowUploadImageAndVerifyRecipeIsPersistedInDatabase() {
         var imageFile = new File(
                 getClass().getClassLoader().getResource("testdata/test-recipe.jpg").getFile()
         );
@@ -63,7 +63,7 @@ class RecipeImportIntegrationTest {
     }
 
     @Test
-    void uploadRealImageProducesOcrOutputWithoutServerError() {
+    void uploadRealImageProducesExtractionWithoutServerError() {
         var imageFile = new File(
                 getClass().getClassLoader().getResource("testdata/test-recipe.jpg").getFile()
         );
@@ -78,8 +78,9 @@ class RecipeImportIntegrationTest {
                 "Expected 201 or 422, but got " + statusCode);
 
         if (statusCode == 422) {
-            String rawText = response.jsonPath().getString("rawText");
-            assertTrue(rawText != null && !rawText.isBlank(), "OCR should have produced some text");
+            String rawResponse = response.jsonPath().getString("rawModelResponse");
+            assertTrue(rawResponse != null && !rawResponse.isBlank(),
+                    "AI extraction should have produced a raw model response");
         }
     }
 
@@ -109,11 +110,10 @@ class RecipeImportIntegrationTest {
     private String buildConfirmRequestJson() {
         return """
                 {
-                    "rawText": "OCR text from handwritten recipe image",
                     "proposedRecipe": {
                         "title": null,
                         "ingredients": null,
-                        "preparation": null
+                        "steps": null
                     },
                     "userOverrides": {
                         "title": "%s",
@@ -126,8 +126,8 @@ class RecipeImportIntegrationTest {
                             "un po' d'olio",
                             "origano"
                         ],
-                        "preparation": "%s"
+                        "steps": ["%s"]
                     }
-                }""".formatted(EXPECTED_TITLE, EXPECTED_PREPARATION);
+                }""".formatted(EXPECTED_TITLE, EXPECTED_PREPARATION_STEP);
     }
 }

@@ -11,31 +11,38 @@ public final class RecipeImportDtos {
     }
 
     /**
-     * Partial recipe DTO used during the import flow.
-     * Fields are nullable because OCR may not extract everything.
+     * Proposed recipe extracted by the AI model.
+     * Fields are nullable because the model may not extract everything.
      */
     public record ProposedRecipeDto(
             String title,
+            String description,
+            String servings,
             List<String> ingredients,
-            String preparation,
+            List<String> steps,
+            String source,
+            List<String> tags,
             Long categoryId,
             String notes
     ) {}
 
     /**
-     * Response returned when OCR succeeds but the parsed recipe is incomplete.
+     * Response returned when AI extraction succeeds but the parsed recipe is incomplete.
      * HTTP 422 Unprocessable Entity.
      */
     public record ImportNeedsMoreInfoResponse(
             String status,
-            String rawText,
+            String rawModelResponse,
             ProposedRecipeDto proposedRecipe,
             List<String> missingFields,
-            List<String> parseWarnings
+            List<String> warnings,
+            String provider,
+            String model
     ) {
-        public ImportNeedsMoreInfoResponse(String rawText, ProposedRecipeDto proposedRecipe,
-                                           List<String> missingFields, List<String> parseWarnings) {
-            this("NEEDS_MORE_INFO", rawText, proposedRecipe, missingFields, parseWarnings);
+        public ImportNeedsMoreInfoResponse(String rawModelResponse, ProposedRecipeDto proposedRecipe,
+                                           List<String> missingFields, List<String> warnings,
+                                           String provider, String model) {
+            this("NEEDS_MORE_INFO", rawModelResponse, proposedRecipe, missingFields, warnings, provider, model);
         }
     }
 
@@ -43,7 +50,6 @@ public final class RecipeImportDtos {
      * Request body for confirming/finalizing an imported recipe.
      */
     public record ImportConfirmRequest(
-            String rawText,
             ProposedRecipeDto proposedRecipe,
             UserOverrides userOverrides
     ) {}
@@ -54,7 +60,7 @@ public final class RecipeImportDtos {
     public record UserOverrides(
             String title,
             List<String> ingredients,
-            String preparation,
+            List<String> steps,
             Long categoryId,
             String notes
     ) {}
