@@ -1,14 +1,73 @@
 # Leo Legacy Recepten
 
-A full-stack recipe application migrating the legacy leo-legacy.be cooking website into a modern Kotlin + Quarkus backend with a React (TypeScript) frontend.
+A full-stack recipe application migrating the legacy leo-legacy.be cooking website into a modern Java 25 + Quarkus backend with a React (TypeScript) frontend.
 
 ## Prerequisites
 
-- Java 21+
-- Node.js 18+ and npm
-- Podman (or Docker) for local PostgreSQL
+- **Java 25** (OpenJDK 25) — see [Installing Java 25 with SDKMAN](#installing-java-25-with-sdkman) below
+- **Node.js 18+** and **npm** (for the frontend build)
+- **Podman** (or Docker) for local PostgreSQL
 - An AI API key for recipe import (OpenAI, Anthropic, or a local vLLM endpoint)
 - No global Gradle installation needed (uses Gradle wrapper)
+
+## Installing Java 25 with SDKMAN
+
+[SDKMAN](https://sdkman.io/) is the easiest way to install and manage multiple JDK versions side by side.
+
+### 1. Install SDKMAN
+
+```bash
+curl -s "https://get.sdkman.io" | bash
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+```
+
+Verify the installation:
+
+```bash
+sdk version
+```
+
+### 2. Install OpenJDK 25
+
+List available Java 25 builds:
+
+```bash
+sdk list java | grep '25'
+```
+
+Install the latest OpenJDK 25 build:
+
+```bash
+sdk install java 25.0.2-open
+```
+
+### 3. Enable OpenJDK 25
+
+To use Java 25 **in the current terminal session**:
+
+```bash
+sdk use java 25.0.2-open
+```
+
+To set Java 25 as **your default** (all new terminals):
+
+```bash
+sdk default java 25.0.2-open
+```
+
+### 4. Verify
+
+```bash
+java -version
+```
+
+You should see output like:
+
+```
+openjdk version "25.0.2" 2026-01-20
+OpenJDK Runtime Environment (build 25.0.2+10-69)
+OpenJDK 64-Bit Server VM (build 25.0.2+10-69, mixed mode, sharing)
+```
 
 ## Project Structure
 
@@ -23,51 +82,76 @@ A full-stack recipe application migrating the legacy leo-legacy.be cooking websi
 │   ├── build.gradle.kts                          # Backend build file (Quarkus + JPA)
 │   └── src/
 │       ├── main/
-│       │   ├── kotlin/be/lutske/leolegacy/
-│       │   │   ├── application/service/          # Extraction service interface + DTOs
+│       │   ├── java/be/lutske/leolegacy/
+│       │   │   ├── application/service/
+│       │   │   │   ├── RecipeExtractionService.java    # AI extraction interface
+│       │   │   │   ├── ExtractionResult.java           # AI extraction result record
+│       │   │   │   └── RecipeExtractionException.java  # AI extraction exception
 │       │   │   ├── infrastructure/
-│       │   │   │   ├── ai/                       # LangChain4j implementation + ChatModel producer
+│       │   │   │   ├── ai/
+│       │   │   │   │   ├── LangChain4jRecipeExtractionService.java  # LangChain4j implementation
+│       │   │   │   │   └── ChatModelProducer.java                   # CDI ChatModel producer
 │       │   │   │   └── persistence/
-│       │   │   │       ├── entity/               # JPA entities (Category, Recipe)
-│       │   │   │       └── repository/           # Panache repositories
+│       │   │   │       ├── entity/
+│       │   │   │       │   ├── RecipeEntity.java       # JPA recipe entity
+│       │   │   │       │   └── CategoryEntity.java     # JPA category entity
+│       │   │   │       └── repository/
+│       │   │   │           ├── RecipeRepository.java   # Panache recipe repository
+│       │   │   │           └── CategoryRepository.java # Panache category repository
 │       │   │   └── interfaceadapter/rest/
-│       │   │       ├── CategoryResource.kt       # GET /api/categories
-│       │   │       ├── RecipeResource.kt         # GET /api/recipes, /api/recipes/top, /api/recipes/{id}
-│       │   │       ├── RecipeImportResource.kt   # POST /api/recipes/import, /api/recipes/import/confirm
-│       │   │       ├── VersionResource.kt        # GET /api/version
-│       │   │       └── *Response.kt / *Dtos.kt   # REST DTOs
+│       │   │       ├── CategoryResource.java           # GET /api/categories
+│       │   │       ├── RecipeResource.java             # GET /api/recipes, /api/recipes/top, /api/recipes/{id}
+│       │   │       ├── RecipeImportResource.java       # POST /api/recipes/import, /api/recipes/import/confirm
+│       │   │       ├── RecipeImportDtos.java           # Import flow DTOs (nested records)
+│       │   │       ├── VersionResource.java            # GET /api/version
+│       │   │       ├── RecipeDetailResponse.java       # Recipe detail DTO
+│       │   │       ├── RecipeSummaryResponse.java      # Recipe list DTO
+│       │   │       ├── CategoryResponse.java           # Category DTO
+│       │   │       ├── VersionResponse.java            # Version DTO
+│       │   │       └── SpaRoutingFilter.java           # SPA routing filter
 │       │   └── resources/
-│       │       ├── application.properties        # Quarkus + datasource + AI config
+│       │       ├── application.properties              # Quarkus + datasource + AI config
 │       │       └── db/migration/
-│       │           ├── V1__init.sql              # Schema (categories + recipes)
-│       │           ├── V2__seed.sql              # Seed data (14 categories, 106 recipes)
-│       │           ├── V3__add_recipe_import_fields.sql
-│       │           └── V4__add_import_metadata.sql
+│       │           ├── V1__init.sql                    # Schema (categories + recipes)
+│       │           ├── V2__seed.sql                    # Seed data (14 categories, 106 recipes)
+│       │           ├── V3__add_recipe_import_fields.sql# Import fields (source, created_at)
+│       │           └── V4__add_import_metadata.sql     # AI import metadata column
 │       └── test/
-│           ├── kotlin/be/lutske/leolegacy/       # Backend tests (H2 in-memory)
-│           └── resources/application.properties  # H2 test config
+│           ├── java/be/lutske/leolegacy/
+│           │   ├── application/service/
+│           │   │   └── ExtractionResultValidationTest.java    # ExtractionResult unit tests
+│           │   └── interfaceadapter/rest/
+│           │       ├── VersionResourceTest.java
+│           │       ├── CategoryResourceTest.java
+│           │       ├── RecipeResourceTest.java
+│       │       ├── RecipeImportResourceTest.java           # Import tests (mocked AI extraction)
+│       │       ├── RecipeImportIntegrationTest.java        # E2E import (real Postgres + AI, @Tag("integration"))
+│           │       └── PostgresIntegrationTestProfile.java     # Test profile for real DB
+│           └── resources/
+│               ├── application.properties              # H2 test config
+│               └── testdata/test-recipe.jpg            # Handwritten recipe image for E2E
 ├── frontend/
-│   ├── package.json                              # Vite + React + TypeScript
-│   ├── vite.config.ts                            # Dev proxy /api -> localhost:8080
+│   ├── package.json                                    # Vite + React + TypeScript
+│   ├── vite.config.ts                                  # Dev proxy /api -> localhost:8080
 │   └── src/
-│       ├── main.tsx                              # App entry point
-│       ├── App.tsx                               # Layout (Header + Routes + Footer)
-│       ├── theme.css                             # Italian color palette (green/white/red)
-│       ├── api/client.ts                         # API types + fetch helpers
-│       ├── i18n/useTranslation.ts                # Simple i18n hook
-│       ├── locales/nl.json                       # Dutch translations
-│       ├── components/                           # Header, Footer, CategorySidebar
-│       └── pages/                                # HomePage, RecipeDetailPage, ImportRecipePage
-├── release-notes/                                # Release notes per change
-└── leo-legacy-static/                            # Original static site (reference)
+│       ├── main.tsx                                    # App entry point
+│       ├── App.tsx                                     # Layout (Header + Routes + Footer)
+│       ├── theme.css                                   # Italian color palette (green/white/red)
+│       ├── api/client.ts                               # API types + fetch helpers
+│       ├── i18n/useTranslation.ts                      # Simple i18n hook
+│       ├── locales/nl.json                             # Dutch translations
+│       ├── components/                                 # Header, Footer, CategorySidebar
+│       └── pages/                                      # HomePage, RecipeDetailPage, ImportRecipePage
+└── release-notes/                                      # Release notes per change
 ```
 
-## How to Run (Development)
+## How to Run
 
 ### 1. Start PostgreSQL
 
 ```bash
 podman compose up -d
+# or: docker compose up -d
 ```
 
 This starts a PostgreSQL 17 container on port 5432 with persistent volume.
@@ -103,15 +187,17 @@ app.ai.api-key=not-needed
 
 **Note for vLLM**: The served model must be vision-capable (e.g. LLaVA, Qwen-VL). If the model does not support image input, the extraction will fail with a clear error.
 
-### 3. Start the Backend
+### 3. Start the Application
 
 ```bash
 ./gradlew :backend:quarkusDev
 ```
 
-The Quarkus backend starts on [http://localhost:8080](http://localhost:8080) with live reload. Flyway automatically runs database migrations on startup.
+The Gradle build automatically builds the React frontend and bundles it into the Quarkus application. The full site (frontend + API) is served on [http://localhost:8080](http://localhost:8080). Flyway automatically runs database migrations on startup.
 
-### 4. Start the Frontend
+### 4. Frontend Development (optional — for hot reload)
+
+For frontend-only development with hot module replacement:
 
 ```bash
 cd frontend
@@ -128,6 +214,13 @@ The Vite dev server starts on [http://localhost:3000](http://localhost:3000) and
 ```bash
 ./gradlew :backend:build    # compile + test + package
 ./gradlew :backend:test     # tests only (uses H2 in-memory, no Docker needed)
+```
+
+Integration tests (tagged `@Tag("integration")`) are excluded from the default test run. To run them, start PostgreSQL first and then:
+
+```bash
+podman compose up -d
+./gradlew :backend:test -Dtest.includeTags=integration
 ```
 
 ### Frontend
@@ -199,8 +292,8 @@ Key application properties (`backend/src/main/resources/application.properties`)
 
 ## Tech Stack
 
-- **Backend**: Kotlin 2.0.21, Quarkus 3.17.7, LangChain4j 0.26.2, Hibernate ORM Panache, Flyway, PostgreSQL
+- **Backend**: Java 25 (OpenJDK), Quarkus 3.32.2, LangChain4j 1.0.0-beta2, Hibernate ORM Panache, Flyway, PostgreSQL
 - **Frontend**: React 19, TypeScript 5.9, Vite 7, React Router 7
 - **AI**: LangChain4j with OpenAI, Anthropic Claude, and vLLM support
-- **Build**: Gradle 8.12 (wrapper), npm
+- **Build**: Gradle 9.3.1 (wrapper), npm
 - **Infrastructure**: Podman Compose, PostgreSQL 17
