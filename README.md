@@ -4,11 +4,70 @@ A full-stack recipe application migrating the legacy leo-legacy.be cooking websi
 
 ## Prerequisites
 
-- Java 21+
-- Node.js 18+ and npm
-- Podman (or Docker) for local PostgreSQL
+- **Java 25** (OpenJDK 25) — see [Installing Java 25 with SDKMAN](#installing-java-25-with-sdkman) below
+- **Node.js 18+** and **npm** (for the frontend build)
+- **Podman** (or Docker) for local PostgreSQL
 - An AI API key for recipe import (OpenAI, Anthropic, or a local vLLM endpoint)
 - No global Gradle installation needed (uses Gradle wrapper)
+
+## Installing Java 25 with SDKMAN
+
+[SDKMAN](https://sdkman.io/) is the easiest way to install and manage multiple JDK versions side by side.
+
+### 1. Install SDKMAN
+
+```bash
+curl -s "https://get.sdkman.io" | bash
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+```
+
+Verify the installation:
+
+```bash
+sdk version
+```
+
+### 2. Install OpenJDK 25
+
+List available Java 25 builds:
+
+```bash
+sdk list java | grep '25'
+```
+
+Install the latest OpenJDK 25 build:
+
+```bash
+sdk install java 25.0.2-open
+```
+
+### 3. Enable OpenJDK 25
+
+To use Java 25 **in the current terminal session**:
+
+```bash
+sdk use java 25.0.2-open
+```
+
+To set Java 25 as **your default** (all new terminals):
+
+```bash
+sdk default java 25.0.2-open
+```
+
+### 4. Verify
+
+```bash
+java -version
+```
+
+You should see output like:
+
+```
+openjdk version "25.0.2" 2026-01-20
+OpenJDK Runtime Environment (build 25.0.2+10-69)
+OpenJDK 64-Bit Server VM (build 25.0.2+10-69, mixed mode, sharing)
+```
 
 ## Project Structure
 
@@ -44,8 +103,19 @@ A full-stack recipe application migrating the legacy leo-legacy.be cooking websi
 │       │           ├── V3__add_recipe_import_fields.sql
 │       │           └── V4__add_import_metadata.sql
 │       └── test/
-│           ├── kotlin/be/lutske/leolegacy/       # Backend tests (H2 in-memory)
-│           └── resources/application.properties  # H2 test config
+│           ├── java/be/lutske/leolegacy/         # Backend tests
+│           │   ├── application/service/
+│           │   │   └── RecipeParserServiceTest.java      # Parser unit tests
+│           │   └── interfaceadapter/rest/
+│           │       ├── VersionResourceTest.java
+│           │       ├── CategoryResourceTest.java
+│           │       ├── RecipeResourceTest.java
+│           │       ├── RecipeImportResourceTest.java      # Import tests (mocked OCR)
+│           │       ├── RecipeImportIntegrationTest.java   # E2E import (real Postgres + Tesseract)
+│           │       └── PostgresIntegrationTestProfile.java# Test profile for real DB
+│           └── resources/
+│               ├── application.properties        # H2 test config
+│               └── testdata/test-recipe.jpg      # Handwritten recipe image for E2E
 ├── frontend/
 │   ├── package.json                              # Vite + React + TypeScript
 │   ├── vite.config.ts                            # Dev proxy /api -> localhost:8080
@@ -58,16 +128,16 @@ A full-stack recipe application migrating the legacy leo-legacy.be cooking websi
 │       ├── locales/nl.json                       # Dutch translations
 │       ├── components/                           # Header, Footer, CategorySidebar
 │       └── pages/                                # HomePage, RecipeDetailPage, ImportRecipePage
-├── release-notes/                                # Release notes per change
-└── leo-legacy-static/                            # Original static site (reference)
+└── release-notes/                                # Release notes per change
 ```
 
-## How to Run (Development)
+## How to Run
 
 ### 1. Start PostgreSQL
 
 ```bash
 podman compose up -d
+# or: docker compose up -d
 ```
 
 This starts a PostgreSQL 17 container on port 5432 with persistent volume.
@@ -104,14 +174,17 @@ app.ai.api-key=not-needed
 **Note for vLLM**: The served model must be vision-capable (e.g. LLaVA, Qwen-VL). If the model does not support image input, the extraction will fail with a clear error.
 
 ### 3. Start the Backend
+### 2. Start the application
 
 ```bash
 ./gradlew :backend:quarkusDev
 ```
 
-The Quarkus backend starts on [http://localhost:8080](http://localhost:8080) with live reload. Flyway automatically runs database migrations on startup.
+The Gradle build automatically builds the React frontend and bundles it into the Quarkus application. The full site (frontend + API) is served on [http://localhost:8080](http://localhost:8080). Flyway automatically runs database migrations on startup.
 
-### 4. Start the Frontend
+### 3. Frontend development (optional — for hot reload)
+
+For frontend-only development with hot module replacement:
 
 ```bash
 cd frontend

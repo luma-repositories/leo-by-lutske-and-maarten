@@ -44,6 +44,5 @@ ext {
         quarkusMockito          : 'io.quarkus:quarkus-junit5-mockito',
         quarkusTestH2           : 'io.quarkus:quarkus-jdbc-h2',
         restAssured             : "io.rest-assured:rest-assured:${versions.restAssured}",
-        mockitoKotlin           : "org.mockito.kotlin:mockito-kotlin:${versions.mockitoKotlin}",
     ]
 }
