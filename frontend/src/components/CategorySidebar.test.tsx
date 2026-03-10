@@ -26,10 +26,10 @@ describe('CategorySidebar', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Receptenboek')).toBeInTheDocument();
+    expect(screen.getByText('Recipe Book')).toBeInTheDocument();
   });
 
-  it('renders "Alle recepten" link', () => {
+  it('renders "All Recipes" link', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       json: () => Promise.resolve(mockCategories),
@@ -41,7 +41,7 @@ describe('CategorySidebar', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Alle recepten')).toBeInTheDocument();
+    expect(screen.getByText('All Recipes')).toBeInTheDocument();
   });
 
   it('renders categories after fetching', async () => {
@@ -135,6 +135,6 @@ describe('CategorySidebar', () => {
 
     // Should still render the sidebar structure
     expect(document.getElementById('category-sidebar')).toBeInTheDocument();
-    expect(screen.getByText('Alle recepten')).toBeInTheDocument();
+    expect(screen.getByText('All Recipes')).toBeInTheDocument();
   });
 });

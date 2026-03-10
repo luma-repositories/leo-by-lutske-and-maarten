@@ -24,6 +24,12 @@ import static org.mockito.Mockito.when;
 /**
  * Integration tests for the recipe import endpoints.
  * RecipeExtractionService is mocked since no real AI provider is available in test environment.
+ *
+ * <p>Contract:
+ * <ul>
+ *   <li>{@code POST /api/recipes/import} always returns HTTP 200 with extraction for user review</li>
+ *   <li>{@code POST /api/recipes/import/confirm} returns HTTP 201 when recipe is persisted</li>
+ * </ul>
  */
 @QuarkusTest
 class RecipeImportResourceTest {
@@ -37,7 +43,7 @@ class RecipeImportResourceTest {
                 new ExtractionResult(
                         "Chocolate Mousse",
                         "A rich chocolate dessert",
-                        "4 personen",
+                        "4 servings",
                         List.of("200 g dark chocolate", "4 eggs", "50 g sugar"),
                         List.of("Melt the chocolate au bain-marie.",
                                 "Separate the eggs.",
@@ -52,7 +58,7 @@ class RecipeImportResourceTest {
     }
 
     @Test
-    void postImportWithValidImageCreatesRecipeWhenFullyExtracted() throws IOException {
+    void postImportWithValidImageReturns200WithCompleteExtraction() throws IOException {
         File tempFile = createTempImageFile();
 
         given()
@@ -60,18 +66,19 @@ class RecipeImportResourceTest {
                 .when()
                 .post("/api/recipes/import")
                 .then()
-                .statusCode(201)
-                .body("id", is(greaterThanOrEqualTo(1)))
-                .body("title", is("Chocolate Mousse"))
-                .body("ingredients.size()", is(3))
-                .body("preparation", is(notNullValue()))
-                .body("categoryName", is("Geimporteerd"));
+                .statusCode(200)
+                .body("status", is("COMPLETE"))
+                .body("proposedRecipe.title", is("Chocolate Mousse"))
+                .body("proposedRecipe.ingredients.size()", is(3))
+                .body("proposedRecipe.preparation", is(notNullValue()))
+                .body("rawModelResponse", is(notNullValue()))
+                .body("missingFields.size()", is(0));
 
         tempFile.delete();
     }
 
     @Test
-    void postImportReturns422WhenExtractionIsIncomplete() throws IOException {
+    void postImportReturns200WithNeedsMoreInfoWhenExtractionIsIncomplete() throws IOException {
         when(extractionService.extractRecipeFromImage(any(), anyString())).thenReturn(
                 new ExtractionResult(
                         null, null, null, null, null, null, null,
@@ -87,13 +94,12 @@ class RecipeImportResourceTest {
                 .when()
                 .post("/api/recipes/import")
                 .then()
-                .statusCode(422)
+                .statusCode(200)
                 .body("status", is("NEEDS_MORE_INFO"))
                 .body("rawModelResponse", is(notNullValue()))
                 .body("proposedRecipe", is(notNullValue()))
                 .body("missingFields.size()", greaterThanOrEqualTo(1))
-                .body("provider", is("openai"))
-                .body("model", is("gpt-4o"));
+                .body("warnings.size()", greaterThanOrEqualTo(1));
 
         tempFile.delete();
     }
@@ -107,7 +113,7 @@ class RecipeImportResourceTest {
                             "proposedRecipe": {
                                 "title": "Test Recipe",
                                 "ingredients": ["100 g flour", "2 eggs"],
-                                "steps": ["Mix ingredients.", "Bake at 180C."]
+                                "preparation": "Mix ingredients.\\nBake at 180C."
                             }
                         }""")
                 .when()
@@ -129,12 +135,12 @@ class RecipeImportResourceTest {
                             "proposedRecipe": {
                                 "title": "Original Title",
                                 "ingredients": ["old ingredient"],
-                                "steps": ["old step"]
+                                "preparation": "old step"
                             },
                             "userOverrides": {
                                 "title": "Corrected Title",
                                 "ingredients": ["200 g chocolate", "4 eggs", "50 g sugar"],
-                                "steps": ["Corrected step 1.", "Corrected step 2."],
+                                "preparation": "Corrected step 1.\\nCorrected step 2.",
                                 "notes": "User added this note"
                             }
                         }""")
@@ -147,6 +153,28 @@ class RecipeImportResourceTest {
     }
 
     @Test
+    void postConfirmWithNotesAppendsEnglishNotesPrefix() {
+        given()
+                .contentType("application/json")
+                .body("""
+                        {
+                            "proposedRecipe": {
+                                "title": "Test Recipe",
+                                "ingredients": ["100 g flour"],
+                                "preparation": "Mix well."
+                            },
+                            "userOverrides": {
+                                "notes": "Extra tip from user"
+                            }
+                        }""")
+                .when()
+                .post("/api/recipes/import/confirm")
+                .then()
+                .statusCode(201)
+                .body("preparation", is("Mix well.\n\nNotes: Extra tip from user"));
+    }
+
+    @Test
     void postConfirmWithoutTitleReturns400() {
         given()
                 .contentType("application/json")
@@ -154,7 +182,7 @@ class RecipeImportResourceTest {
                         {
                             "proposedRecipe": {
                                 "ingredients": ["flour"],
-                                "steps": ["bake"]
+                                "preparation": "bake"
                             }
                         }""")
                 .when()
@@ -164,7 +192,7 @@ class RecipeImportResourceTest {
     }
 
     @Test
-    void postImportWithEmptyExtractionReturns422() throws IOException {
+    void postImportWithEmptyExtractionReturns200WithNeedsMoreInfo() throws IOException {
         when(extractionService.extractRecipeFromImage(any(), anyString())).thenReturn(
                 new ExtractionResult());
         QuarkusMock.installMockForType(extractionService, LangChain4jRecipeExtractionService.class);
@@ -176,7 +204,7 @@ class RecipeImportResourceTest {
                 .when()
                 .post("/api/recipes/import")
                 .then()
-                .statusCode(422)
+                .statusCode(200)
                 .body("status", is("NEEDS_MORE_INFO"))
                 .body("missingFields.size()", is(3));
 

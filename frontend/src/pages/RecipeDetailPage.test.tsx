@@ -35,7 +35,7 @@ describe('RecipeDetailPage', () => {
 
     renderWithRoute('42');
 
-    expect(screen.getByText('Laden...')).toBeInTheDocument();
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
     expect(document.getElementById('recipe-detail-loading')).toBeInTheDocument();
   });
 
@@ -95,7 +95,7 @@ describe('RecipeDetailPage', () => {
     });
   });
 
-  it('renders section headings in Dutch', async () => {
+  it('renders section headings in English', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       json: () => Promise.resolve(mockRecipe),
@@ -104,8 +104,8 @@ describe('RecipeDetailPage', () => {
     renderWithRoute('42');
 
     await waitFor(() => {
-      expect(screen.getByText('Benodigdheden')).toBeInTheDocument();
-      expect(screen.getByText('Bereiding')).toBeInTheDocument();
+      expect(screen.getByText('Ingredients')).toBeInTheDocument();
+      expect(screen.getByText('Preparation')).toBeInTheDocument();
     });
   });
 
@@ -118,7 +118,7 @@ describe('RecipeDetailPage', () => {
     renderWithRoute('999999');
 
     await waitFor(() => {
-      expect(screen.getByText('Recept niet gevonden.')).toBeInTheDocument();
+      expect(screen.getByText('Recipe not found.')).toBeInTheDocument();
     });
   });
 
@@ -153,7 +153,7 @@ describe('RecipeDetailPage', () => {
       const backLink = document.getElementById('recipe-detail-back') as HTMLAnchorElement;
       expect(backLink).toBeInTheDocument();
       expect(backLink.getAttribute('href')).toBe('/?categoryId=7');
-      expect(backLink.textContent).toContain('Terug naar Nagerechten');
+      expect(backLink.textContent).toContain('Back to Nagerechten');
     });
   });
 });

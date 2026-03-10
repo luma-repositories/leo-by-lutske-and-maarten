@@ -9,7 +9,7 @@ export default function Header() {
   useEffect(() => {
     fetchVersion()
       .then((data) => setVersion(data.version))
-      .catch(() => setVersion('onbekend'));
+      .catch(() => setVersion('unknown'));
   }, []);
 
   return (
@@ -23,11 +23,11 @@ export default function Header() {
         <div className="header__content">
           <Link to="/" className="header__brand" id="header-brand">
             <h1 className="header__title">Leo Legacy</h1>
-            <span className="header__subtitle">Recepten</span>
+            <span className="header__subtitle">Recipes</span>
           </Link>
           <div className="header__actions">
             <Link to="/import" className="header__import-btn" id="header-import-btn">
-              Importeer
+              Import
             </Link>
             {version && (
               <span className="header__version" id="app-version">

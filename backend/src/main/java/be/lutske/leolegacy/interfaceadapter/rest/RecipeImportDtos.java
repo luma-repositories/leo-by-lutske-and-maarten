@@ -4,6 +4,7 @@ import java.util.List;
 
 /**
  * DTOs for the recipe import flow.
+ * Field names must match the frontend TypeScript interfaces in api/client.ts.
  */
 public final class RecipeImportDtos {
 
@@ -12,14 +13,14 @@ public final class RecipeImportDtos {
 
     /**
      * Proposed recipe extracted by the AI model.
-     * Fields are nullable because the model may not extract everything.
+     * Uses {@code preparation} (joined string) to match the frontend contract.
      */
     public record ProposedRecipeDto(
             String title,
             String description,
             String servings,
             List<String> ingredients,
-            List<String> steps,
+            String preparation,
             String source,
             List<String> tags,
             Long categoryId,
@@ -27,29 +28,23 @@ public final class RecipeImportDtos {
     ) {}
 
     /**
-     * Response returned when AI extraction succeeds but the parsed recipe is incomplete.
-     * HTTP 422 Unprocessable Entity.
+     * Unified response from {@code POST /api/recipes/import}.
+     * Always HTTP 200. Status is "COMPLETE" or "NEEDS_MORE_INFO".
      */
-    public record ImportNeedsMoreInfoResponse(
+    public record ImportExtractionResponse(
             String status,
             String rawModelResponse,
             ProposedRecipeDto proposedRecipe,
             List<String> missingFields,
-            List<String> warnings,
-            String provider,
-            String model
-    ) {
-        public ImportNeedsMoreInfoResponse(String rawModelResponse, ProposedRecipeDto proposedRecipe,
-                                           List<String> missingFields, List<String> warnings,
-                                           String provider, String model) {
-            this("NEEDS_MORE_INFO", rawModelResponse, proposedRecipe, missingFields, warnings, provider, model);
-        }
-    }
+            List<String> warnings
+    ) {}
 
     /**
      * Request body for confirming/finalizing an imported recipe.
+     * Matches the frontend {@code ImportConfirmRequest} interface.
      */
     public record ImportConfirmRequest(
+            String rawModelResponse,
             ProposedRecipeDto proposedRecipe,
             UserOverrides userOverrides
     ) {}
@@ -60,8 +55,10 @@ public final class RecipeImportDtos {
     public record UserOverrides(
             String title,
             List<String> ingredients,
-            List<String> steps,
+            String preparation,
             Long categoryId,
-            String notes
+            String notes,
+            String servings,
+            String description
     ) {}
 }

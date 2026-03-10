@@ -124,9 +124,9 @@ OpenJDK 64-Bit Server VM (build 25.0.2+10-69, mixed mode, sharing)
 │           │       ├── VersionResourceTest.java
 │           │       ├── CategoryResourceTest.java
 │           │       ├── RecipeResourceTest.java
-│       │       ├── RecipeImportResourceTest.java           # Import tests (mocked AI extraction)
-│       │       ├── RecipeImportIntegrationTest.java        # E2E import (real Postgres + AI, @Tag("integration"))
-│           │       └── PostgresIntegrationTestProfile.java     # Test profile for real DB
+│           │       ├── RecipeImportResourceTest.java       # Import tests (mocked AI extraction)
+│           │       ├── RecipeImportIntegrationTest.java    # E2E import (real Postgres + AI, @Tag("integration"))
+│           │       └── PostgresIntegrationTestProfile.java # Test profile for real DB
 │           └── resources/
 │               ├── application.properties              # H2 test config
 │               └── testdata/test-recipe.jpg            # Handwritten recipe image for E2E

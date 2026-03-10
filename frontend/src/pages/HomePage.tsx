@@ -29,12 +29,12 @@ export default function HomePage() {
       </div>
       <main className="home__main" id="recipe-list-container">
         <h2 className="home__heading" id="recipe-list-heading">
-          {categoryId ? 'Recepten' : 'Populairste recepten'}
+          {categoryId ? 'Recipes' : 'Most Popular Recipes'}
         </h2>
         {loading ? (
-          <p className="home__loading" id="recipe-list-loading">Laden...</p>
+          <p className="home__loading" id="recipe-list-loading">Loading...</p>
         ) : recipes.length === 0 ? (
-          <p className="home__empty" id="recipe-list-empty">Geen recepten gevonden.</p>
+          <p className="home__empty" id="recipe-list-empty">No recipes found.</p>
         ) : (
           <ul className="recipe-grid" id="recipe-grid">
             {recipes.map((recipe) => (
@@ -51,7 +51,7 @@ export default function HomePage() {
                       </span>
                       {recipe.viewCount > 0 && (
                         <span className="recipe-card__views" id={`recipe-views-${recipe.id}`}>
-                          {recipe.viewCount.toLocaleString('nl-BE')} bekeken
+                          {recipe.viewCount.toLocaleString('en')} views
                         </span>
                       )}
                     </div>

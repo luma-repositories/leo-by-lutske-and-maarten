@@ -22,7 +22,7 @@ export default function RecipeDetailPage() {
   if (loading) {
     return (
       <div className="detail-page" id="recipe-detail-page">
-        <p className="detail-page__loading" id="recipe-detail-loading">Laden...</p>
+        <p className="detail-page__loading" id="recipe-detail-loading">Loading...</p>
       </div>
     );
   }
@@ -30,9 +30,9 @@ export default function RecipeDetailPage() {
   if (error || !recipe) {
     return (
       <div className="detail-page" id="recipe-detail-page">
-        <p className="detail-page__error" id="recipe-detail-error">Recept niet gevonden.</p>
+        <p className="detail-page__error" id="recipe-detail-error">Recipe not found.</p>
         <Link to="/" className="detail-page__back" id="recipe-detail-back-error">
-          &larr; Terug naar recepten
+          &larr; Back to recipes
         </Link>
       </div>
     );
@@ -41,7 +41,7 @@ export default function RecipeDetailPage() {
   return (
     <div className="detail-page" id="recipe-detail-page">
       <Link to={`/?categoryId=${recipe.categoryId}`} className="detail-page__back" id="recipe-detail-back">
-        &larr; Terug naar {recipe.categoryName}
+        &larr; Back to {recipe.categoryName}
       </Link>
 
       <article className="detail-card" id="recipe-detail-card">
@@ -55,7 +55,7 @@ export default function RecipeDetailPage() {
           </header>
 
           <section className="detail-card__section" id="recipe-detail-ingredients-section">
-            <h2 className="detail-card__section-title">Benodigdheden</h2>
+            <h2 className="detail-card__section-title">Ingredients</h2>
             <ul className="detail-card__ingredients" id="recipe-detail-ingredients">
               {recipe.ingredients.map((item, idx) => (
                 <li key={idx} className="detail-card__ingredient" id={`ingredient-${idx}`}>
@@ -66,7 +66,7 @@ export default function RecipeDetailPage() {
           </section>
 
           <section className="detail-card__section" id="recipe-detail-preparation-section">
-            <h2 className="detail-card__section-title">Bereiding</h2>
+            <h2 className="detail-card__section-title">Preparation</h2>
             <p className="detail-card__preparation" id="recipe-detail-preparation">
               {recipe.preparation}
             </p>

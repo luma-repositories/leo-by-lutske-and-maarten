@@ -3,7 +3,7 @@ ALTER TABLE recipe ADD COLUMN source VARCHAR(100);
 ALTER TABLE recipe ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
 -- Add a default category for imported recipes
-INSERT INTO category (id, name) VALUES (15, 'Geimporteerd');
+INSERT INTO category (id, name) VALUES (15, 'Imported');
 
 -- Reset identity sequences to avoid conflicts with seed data
 -- (H2 and PostgreSQL both support ALTER TABLE ... ALTER COLUMN ... RESTART WITH)

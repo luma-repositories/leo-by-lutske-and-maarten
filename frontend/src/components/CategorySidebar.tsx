@@ -16,7 +16,7 @@ export default function CategorySidebar() {
 
   return (
     <aside className="sidebar" id="category-sidebar">
-      <h2 className="sidebar__title" id="sidebar-title">Receptenboek</h2>
+      <h2 className="sidebar__title" id="sidebar-title">Recipe Book</h2>
       <nav className="sidebar__nav">
         <ul className="sidebar__list" id="category-list">
           <li className="sidebar__item" id="category-item-all">
@@ -25,7 +25,7 @@ export default function CategorySidebar() {
               className={`sidebar__link ${!activeCategoryId ? 'sidebar__link--active' : ''}`}
               id="category-link-all"
             >
-              Alle recepten
+              All Recipes
             </Link>
           </li>
           {categories.map((cat) => (

@@ -22,7 +22,7 @@ describe('HomePage', () => {
     vi.restoreAllMocks();
   });
 
-  it('shows "Populairste recepten" heading when no category is selected', async () => {
+  it('shows "Most Popular Recipes" heading when no category is selected', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation((url) => {
       const urlStr = typeof url === 'string' ? url : url.toString();
       if (urlStr.includes('/api/recipes/top')) {
@@ -50,11 +50,11 @@ describe('HomePage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Populairste recepten')).toBeInTheDocument();
+      expect(screen.getByText('Most Popular Recipes')).toBeInTheDocument();
     });
   });
 
-  it('shows "Recepten" heading when a category is selected', async () => {
+  it('shows "Recipes" heading when a category is selected', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation((url) => {
       const urlStr = typeof url === 'string' ? url : url.toString();
       if (urlStr.includes('/api/recipes') && urlStr.includes('categoryId=1')) {
@@ -82,7 +82,7 @@ describe('HomePage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Recepten')).toBeInTheDocument();
+      expect(screen.getByText('Recipes')).toBeInTheDocument();
     });
   });
 
@@ -130,7 +130,7 @@ describe('HomePage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Laden...')).toBeInTheDocument();
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
   it('shows empty state when no recipes found', async () => {
@@ -161,7 +161,7 @@ describe('HomePage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Geen recepten gevonden.')).toBeInTheDocument();
+      expect(screen.getByText('No recipes found.')).toBeInTheDocument();
     });
   });
 
@@ -230,7 +230,7 @@ describe('HomePage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/5\.432 bekeken/)).toBeInTheDocument();
+      expect(screen.getByText(/5,432 views/)).toBeInTheDocument();
     });
   });
 });

@@ -10,7 +10,7 @@ describe('Footer', () => {
       screen.getByText(/Leo Legacy/),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/een kooksite voor lekkerbekken/),
+      screen.getByText(/a cooking site for food lovers/),
     ).toBeInTheDocument();
   });
 

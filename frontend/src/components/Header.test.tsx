@@ -21,7 +21,7 @@ describe('Header', () => {
     );
 
     expect(screen.getByText('Leo Legacy')).toBeInTheDocument();
-    expect(screen.getByText('Recepten')).toBeInTheDocument();
+    expect(screen.getByText('Recipes')).toBeInTheDocument();
   });
 
   it('has correct id and class attributes for e2e testing', () => {
@@ -60,7 +60,7 @@ describe('Header', () => {
     expect(document.getElementById('app-version')).toBeInTheDocument();
   });
 
-  it('displays "onbekend" when version fetch fails', async () => {
+  it('displays "unknown" when version fetch fails', async () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Network error'));
 
     render(
@@ -70,7 +70,7 @@ describe('Header', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('vonbekend')).toBeInTheDocument();
+      expect(screen.getByText('vunknown')).toBeInTheDocument();
     });
   });
 
@@ -108,7 +108,7 @@ describe('Header', () => {
     expect(brandLink.getAttribute('href')).toBe('/');
   });
 
-  it('renders the Importeer button linking to /import', () => {
+  it('renders the Import button linking to /import', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ version: '1.0.0' }),
@@ -122,7 +122,7 @@ describe('Header', () => {
 
     const importBtn = document.getElementById('header-import-btn') as HTMLAnchorElement;
     expect(importBtn).toBeInTheDocument();
-    expect(importBtn.textContent).toBe('Importeer');
+    expect(importBtn.textContent).toBe('Import');
     expect(importBtn.getAttribute('href')).toBe('/import');
     expect(importBtn.classList.contains('header__import-btn')).toBe(true);
   });

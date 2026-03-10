@@ -1,4 +1,4 @@
-import nl from '../locales/nl.json';
+import en from '../locales/en.json';
 
 type NestedRecord = { [key: string]: string | NestedRecord };
 
@@ -6,7 +6,7 @@ type NestedRecord = { [key: string]: string | NestedRecord };
  * Simple i18n hook for the Leo Legacy application.
  *
  * Returns a `t(key)` function that resolves dot-separated keys
- * against the Dutch locale file (e.g. "import.pageTitle").
+ * against the English locale file (e.g. "import.pageTitle").
  *
  * Usage:
  *   const { t } = useTranslation();
@@ -15,7 +15,7 @@ type NestedRecord = { [key: string]: string | NestedRecord };
 export function useTranslation() {
   function t(key: string): string {
     const parts = key.split('.');
-    let current: string | NestedRecord = nl as NestedRecord;
+    let current: string | NestedRecord = en as NestedRecord;
 
     for (const part of parts) {
       if (typeof current === 'string') return key; // key too deep

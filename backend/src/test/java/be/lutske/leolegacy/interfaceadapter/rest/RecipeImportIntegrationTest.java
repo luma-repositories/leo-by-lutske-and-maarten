@@ -17,9 +17,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Full end-to-end integration test for recipe import from image.
  *
- * Prerequisites:
- * - {@code podman compose up -d} must be running (PostgreSQL)
- * - An AI API key must be configured (e.g. via {@code backend/.env})
+ * <p>Prerequisites:
+ * <ul>
+ *   <li>{@code podman compose up -d} must be running (PostgreSQL)</li>
+ *   <li>An AI API key must be configured (e.g. via {@code backend/.env})</li>
+ * </ul>
+ *
+ * <p>Contract:
+ * <ul>
+ *   <li>{@code POST /api/recipes/import} always returns HTTP 200 with extraction for review</li>
+ *   <li>{@code POST /api/recipes/import/confirm} returns HTTP 201 when recipe is persisted</li>
+ * </ul>
  */
 @QuarkusTest
 @TestProfile(PostgresIntegrationTestProfile.class)
@@ -27,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RecipeImportIntegrationTest {
 
     private static final String EXPECTED_TITLE = "Scaloppine alla pizzaiola";
-    private static final String EXPECTED_PREPARATION_STEP =
+    private static final String EXPECTED_PREPARATION =
             "Si mette in una pentola il pomodoro e l'aglio, i capperi, il sale, l'olio, " +
             "le scaloppine ed infine la mozzarella e l'origano. " +
             "Lasciar asciugare il pomodoro e cuocere la carne. (cott. 1 ora)";
@@ -43,9 +51,11 @@ class RecipeImportIntegrationTest {
                 .when()
                 .post("/api/recipes/import");
 
-        int statusCode = importResponse.statusCode();
-        assertTrue(statusCode == 201 || statusCode == 422,
-                "Expected 201 or 422, but got " + statusCode);
+        // Import always returns 200 with extraction data for review
+        importResponse.then().statusCode(200);
+        String status = importResponse.jsonPath().getString("status");
+        assertTrue("COMPLETE".equals(status) || "NEEDS_MORE_INFO".equals(status),
+                "Expected status COMPLETE or NEEDS_MORE_INFO, but got " + status);
 
         // Always test the confirm flow with correct recipe data
         given()
@@ -58,7 +68,7 @@ class RecipeImportIntegrationTest {
                 .body("id", is(greaterThan(0)))
                 .body("title", is(EXPECTED_TITLE))
                 .body("ingredients.size()", is(7))
-                .body("categoryName", is("Geimporteerd"))
+                .body("categoryName", is("Imported"))
                 .body("viewCount", is(0));
     }
 
@@ -73,11 +83,13 @@ class RecipeImportIntegrationTest {
                 .when()
                 .post("/api/recipes/import");
 
-        int statusCode = response.statusCode();
-        assertTrue(statusCode == 201 || statusCode == 422,
-                "Expected 201 or 422, but got " + statusCode);
+        // Import always returns 200
+        response.then().statusCode(200);
+        String status = response.jsonPath().getString("status");
+        assertTrue("COMPLETE".equals(status) || "NEEDS_MORE_INFO".equals(status),
+                "Expected status COMPLETE or NEEDS_MORE_INFO, but got " + status);
 
-        if (statusCode == 422) {
+        if ("NEEDS_MORE_INFO".equals(status)) {
             String rawResponse = response.jsonPath().getString("rawModelResponse");
             assertTrue(rawResponse != null && !rawResponse.isBlank(),
                     "AI extraction should have produced a raw model response");
@@ -85,7 +97,7 @@ class RecipeImportIntegrationTest {
     }
 
     @Test
-    void importedRecipeAppearsInGeimporteerdCategoryListing() {
+    void importedRecipeAppearsInImportedCategoryListing() {
         var confirmResponse = given()
                 .contentType("application/json")
                 .body(buildConfirmRequestJson())
@@ -113,7 +125,7 @@ class RecipeImportIntegrationTest {
                     "proposedRecipe": {
                         "title": null,
                         "ingredients": null,
-                        "steps": null
+                        "preparation": null
                     },
                     "userOverrides": {
                         "title": "%s",
@@ -126,8 +138,8 @@ class RecipeImportIntegrationTest {
                             "un po' d'olio",
                             "origano"
                         ],
-                        "steps": ["%s"]
+                        "preparation": "%s"
                     }
-                }""".formatted(EXPECTED_TITLE, EXPECTED_PREPARATION_STEP);
+                }""".formatted(EXPECTED_TITLE, EXPECTED_PREPARATION);
     }
 }

@@ -11,7 +11,7 @@ export default function Footer() {
         </div>
         <div className="footer__content">
           <p className="footer__text" id="footer-text">
-            Leo Legacy &mdash; een kooksite voor lekkerbekken
+            Leo Legacy &mdash; a cooking site for food lovers
           </p>
         </div>
       </div>

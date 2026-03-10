@@ -7,7 +7,7 @@ import be.lutske.leolegacy.infrastructure.persistence.entity.RecipeEntity;
 import be.lutske.leolegacy.infrastructure.persistence.repository.CategoryRepository;
 import be.lutske.leolegacy.infrastructure.persistence.repository.RecipeRepository;
 import be.lutske.leolegacy.interfaceadapter.rest.RecipeImportDtos.ImportConfirmRequest;
-import be.lutske.leolegacy.interfaceadapter.rest.RecipeImportDtos.ImportNeedsMoreInfoResponse;
+import be.lutske.leolegacy.interfaceadapter.rest.RecipeImportDtos.ImportExtractionResponse;
 import be.lutske.leolegacy.interfaceadapter.rest.RecipeImportDtos.ProposedRecipeDto;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
@@ -30,12 +30,18 @@ import java.util.Set;
 
 /**
  * REST resource for importing recipes from images via AI-powered extraction.
+ *
+ * <p>Flow:
+ * <ol>
+ *   <li>{@code POST /api/recipes/import} — always returns HTTP 200 with extraction for user review</li>
+ *   <li>{@code POST /api/recipes/import/confirm} — saves the recipe after user review/correction</li>
+ * </ol>
  */
 @Path("/api/recipes/import")
 public class RecipeImportResource {
 
     private static final long MAX_FILE_SIZE = 10L * 1024 * 1024; // 10 MB
-    private static final long DEFAULT_IMPORT_CATEGORY_ID = 15L; // "Geimporteerd"
+    private static final long DEFAULT_IMPORT_CATEGORY_ID = 15L; // "Imported"
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
             "image/png", "image/jpeg", "image/jpg", "image/webp"
     );
@@ -54,12 +60,13 @@ public class RecipeImportResource {
     }
 
     /**
-     * Upload an image and attempt to extract a recipe via AI (multimodal LLM).
+     * Upload an image and extract a recipe via AI (multimodal LLM).
+     * Always returns HTTP 200 with the extraction result for user review.
+     * The recipe is NOT saved — use {@code /confirm} to save after review.
      */
     @POST
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    @Transactional
     public Response importFromImage(@RestForm("file") FileUpload file) {
         validateFile(file);
 
@@ -84,28 +91,19 @@ public class RecipeImportResource {
         }
 
         var proposed = toProposedDto(extraction);
+        String status = extraction.isComplete() ? "COMPLETE" : "NEEDS_MORE_INFO";
 
-        if (extraction.isComplete()) {
-            var recipe = createRecipeFromProposal(proposed, extraction);
-            return Response.status(Response.Status.CREATED)
-                    .entity(toDetailResponse(recipe))
-                    .build();
-        }
-
-        return Response.status(422)
-                .entity(new ImportNeedsMoreInfoResponse(
-                        extraction.rawModelResponse(),
-                        proposed,
-                        extraction.missingFields(),
-                        extraction.warnings(),
-                        extraction.provider(),
-                        extraction.model()
-                ))
-                .build();
+        return Response.ok(new ImportExtractionResponse(
+                status,
+                extraction.rawModelResponse(),
+                proposed,
+                extraction.missingFields(),
+                extraction.warnings()
+        )).build();
     }
 
     /**
-     * Confirm and finalize an imported recipe after user provides missing info.
+     * Confirm and finalize an imported recipe after user review.
      */
     @POST
     @Path("/confirm")
@@ -118,7 +116,7 @@ public class RecipeImportResource {
 
         String title = override(overrides != null ? overrides.title() : null, proposed.title());
         List<String> ingredients = override(overrides != null ? overrides.ingredients() : null, proposed.ingredients());
-        List<String> steps = override(overrides != null ? overrides.steps() : null, proposed.steps());
+        String preparation = override(overrides != null ? overrides.preparation() : null, proposed.preparation());
         Long categoryId = override(overrides != null ? overrides.categoryId() : null, proposed.categoryId());
         String notes = overrides != null ? overrides.notes() : proposed.notes();
 
@@ -128,18 +126,22 @@ public class RecipeImportResource {
         if (ingredients == null || ingredients.isEmpty()) {
             throw new BadRequestException("Ingredients are required");
         }
-        if (steps == null || steps.isEmpty()) {
-            throw new BadRequestException("Preparation steps are required");
+        if (preparation == null || preparation.isBlank()) {
+            throw new BadRequestException("Preparation is required");
         }
+
+        String finalPreparation = (notes != null && !notes.isBlank())
+                ? preparation + "\n\nNotes: " + notes
+                : preparation;
 
         var merged = new ProposedRecipeDto(
                 title, proposed.description(), proposed.servings(),
-                ingredients, steps, proposed.source(), proposed.tags(),
+                ingredients, finalPreparation, proposed.source(), proposed.tags(),
                 categoryId != null ? categoryId : DEFAULT_IMPORT_CATEGORY_ID,
-                notes
+                null
         );
 
-        var recipe = createRecipeFromProposal(merged, null);
+        var recipe = createRecipeFromProposal(merged, request.rawModelResponse());
         return Response.status(Response.Status.CREATED)
                 .entity(toDetailResponse(recipe))
                 .build();
@@ -169,21 +171,29 @@ public class RecipeImportResource {
         }
     }
 
+    /**
+     * Convert ExtractionResult to ProposedRecipeDto.
+     * Steps (list) are joined into a single preparation string to match the frontend contract.
+     */
     private ProposedRecipeDto toProposedDto(ExtractionResult extraction) {
+        String preparation = extraction.steps() != null
+                ? String.join("\n", extraction.steps())
+                : null;
+
         return new ProposedRecipeDto(
                 extraction.title(),
                 extraction.description(),
                 extraction.servings(),
                 extraction.ingredients(),
-                extraction.steps(),
+                preparation,
                 extraction.source(),
                 extraction.tags(),
-                null, // categoryId — will be set to default
+                null, // categoryId — set on confirm
                 null  // notes
         );
     }
 
-    private RecipeEntity createRecipeFromProposal(ProposedRecipeDto proposal, ExtractionResult extraction) {
+    private RecipeEntity createRecipeFromProposal(ProposedRecipeDto proposal, String rawModelResponse) {
         long categoryId = proposal.categoryId() != null ? proposal.categoryId() : DEFAULT_IMPORT_CATEGORY_ID;
         var category = categoryRepository.findById(categoryId);
         if (category == null) {
@@ -193,27 +203,17 @@ public class RecipeImportResource {
             throw new IllegalStateException("Default import category not found");
         }
 
-        String preparation = proposal.steps() != null
-                ? String.join("\n", proposal.steps())
-                : "";
-        if (proposal.notes() != null && !proposal.notes().isBlank()) {
-            preparation = preparation + "\n\nNotities: " + proposal.notes();
-        }
-
         var recipe = new RecipeEntity();
-        recipe.setTitle(proposal.title() != null ? proposal.title() : "Naamloos recept");
+        recipe.setTitle(proposal.title() != null ? proposal.title() : "Untitled Recipe");
         recipe.setIngredients(proposal.ingredients() != null ? String.join("|", proposal.ingredients()) : "");
-        recipe.setPreparation(preparation);
+        recipe.setPreparation(proposal.preparation() != null ? proposal.preparation() : "");
         recipe.setCategory(category);
         recipe.setViewCount(0);
-        recipe.setSource(extraction != null && extraction.source() != null
-                ? extraction.source()
-                : "Imported from image");
+        recipe.setSource(proposal.source() != null ? proposal.source() : "Imported from image");
         recipe.setCreatedAt(Instant.now());
 
-        // Store AI metadata if available
-        if (extraction != null && extraction.rawModelResponse() != null) {
-            recipe.setImportMetadata(extraction.rawModelResponse());
+        if (rawModelResponse != null) {
+            recipe.setImportMetadata(rawModelResponse);
         }
 
         recipeRepository.persist(recipe);

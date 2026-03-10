@@ -50,7 +50,7 @@ public class LangChain4jRecipeExtractionService implements RecipeExtractionServi
             {
               "title": "string or null",
               "description": "string or null — brief summary if visible",
-              "servings": "string or null — e.g. '4 personen'",
+              "servings": "string or null — e.g. '4 servings'",
               "ingredients": ["string", ...] or null — each ingredient as a single string with amount+unit+item,
               "steps": ["string", ...] or null — each preparation step as a string,
               "source": "string or null — attribution if visible",
@@ -59,10 +59,10 @@ public class LangChain4jRecipeExtractionService implements RecipeExtractionServi
             }
 
             Important rules:
-            - The recipe may be in any language. Preserve the original language.
+            - The recipe may be in any language. ALWAYS translate ALL extracted content to English, regardless of the original language.
             - If the image is not a recipe, return: {"title": null, "warnings": ["Image does not appear to contain a recipe"]}
             - If text is partially illegible, extract what you can and add a warning.
-            - Ingredients should each be a single string like "200 g bloem" or "3 eieren".
+            - Ingredients should each be a single string like "200 g flour" or "3 eggs".
             - Steps should be individual instructions, not one big block of text.
             """;
 

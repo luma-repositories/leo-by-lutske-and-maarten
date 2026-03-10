@@ -52,8 +52,8 @@ describe('ImportRecipePage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Recept importeren')).toBeInTheDocument();
-    expect(screen.getByText(/Upload een foto van een recept/)).toBeInTheDocument();
+    expect(screen.getByText('Import Recipe')).toBeInTheDocument();
+    expect(screen.getByText(/Upload a photo of a recipe/)).toBeInTheDocument();
   });
 
   it('has correct id attributes for e2e testing', () => {
@@ -112,7 +112,7 @@ describe('ImportRecipePage', () => {
     await user.upload(fileInput, createMockFile());
     await user.click(document.getElementById('import-upload-btn')!);
 
-    expect(screen.getByText('Bezig met herkennen...')).toBeInTheDocument();
+    expect(screen.getByText('Recognizing...')).toBeInTheDocument();
     expect(document.getElementById('import-loading')).toBeInTheDocument();
   });
 
