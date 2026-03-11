@@ -1,5 +1,5 @@
 ---
-name: fullstack-developer
+name: clean-architecture-fullstack-developer
 description: 'Full-stack developer for Java + ReactJS + Quarkus (Gradle). Gate 1: plan + questions. Gate 2: execute in one go after approval.'
 model: anthropic/claude-sonnet-4-20250514
 temperature: 0.2

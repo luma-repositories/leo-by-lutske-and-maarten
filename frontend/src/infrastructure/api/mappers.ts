@@ -1,4 +1,5 @@
 import type { AppVersion } from '../../domain/app/AppVersion';
+import type { ChatbotReply } from '../../domain/chatbot/ChatbotReply';
 import type { Category } from '../../domain/category/Category';
 import type {
   ConfirmRecipeImportCommand,
@@ -9,6 +10,7 @@ import type { RecipeDetail } from '../../domain/recipe/RecipeDetail';
 import type { RecipeSummary } from '../../domain/recipe/RecipeSummary';
 import type {
   CategoryResponseDto,
+  ChatbotReplyResponseDto,
   ImportConfirmRequestDto,
   ImportExtractionResponseDto,
   RecipeDetailResponseDto,
@@ -30,6 +32,20 @@ export function toRecipeSummary(dto: RecipeSummaryResponseDto): RecipeSummary {
     title: dto.title,
     categoryName: dto.categoryName,
     viewCount: dto.viewCount,
+  };
+}
+
+export function toChatbotReply(dto: ChatbotReplyResponseDto): ChatbotReply {
+  return {
+    author: dto.author,
+    message: dto.message,
+    recommendations: dto.recommendations.map((recommendation) => ({
+      id: recommendation.recipeId,
+      title: recommendation.title,
+      categoryName: recommendation.categoryName,
+      viewCount: 0,
+      matchReason: recommendation.matchReason,
+    })),
   };
 }
 

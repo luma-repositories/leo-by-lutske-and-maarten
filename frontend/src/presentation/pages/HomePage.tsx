@@ -1,5 +1,6 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import CategorySidebar from '../components/CategorySidebar';
+import RecipeChatbot from '../components/RecipeChatbot';
 import { useHomeRecipes } from '../hooks/useHomeRecipes';
 import { useTranslation } from '../../shared/i18n/useTranslation';
 import '../../pages/HomePage.css';
@@ -17,6 +18,11 @@ export default function HomePage() {
         <CategorySidebar />
       </div>
       <main className="home__main" id="recipe-list-container">
+        <div className="home__intro" id="home-intro">
+          <div className="home__chatbot" id="home-chatbot-container">
+            <RecipeChatbot />
+          </div>
+        </div>
         <h2 className="home__heading" id="recipe-list-heading">
           {categoryId ? t('home.filteredHeading') : t('home.topHeading')}
         </h2>

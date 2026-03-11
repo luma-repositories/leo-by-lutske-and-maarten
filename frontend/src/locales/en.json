@@ -19,6 +19,27 @@
     "empty": "No recipes found.",
     "views": "{count} views"
   },
+  "chatbot": {
+    "eyebrow": "Kitchen guide",
+    "title": "Meet Leonardo",
+    "description": "Ask for an ingredient, flavor, or kind of meal and Leonardo will point you to matching recipes.",
+    "assistantName": "Leonardo",
+    "youLabel": "You",
+    "initialMessage": "Hello, I am Leonardo. Tell me what you feel like eating and I will help you find a recipe.",
+    "inputLabel": "What are you in the mood for?",
+    "placeholder": "For example: I would like a tomato based dish",
+    "send": "Ask Leonardo",
+    "sending": "Thinking...",
+    "error": "Leonardo is unavailable right now. Please try again.",
+    "suggestions": {
+      "tomato": "I would like a tomato based dish",
+      "chicken": "Something with chicken",
+      "veggie": "Show me a veggie idea",
+      "light": "I want something light",
+      "spicy": "Give me something spicy",
+      "ovenDish": "Recommend an oven dish"
+    }
+  },
   "detail": {
     "ingredients": "Ingredients",
     "preparation": "Preparation",

@@ -8,7 +8,9 @@ import be.lutske.leolegacy.port.out.RecipeCommandPort;
 import be.lutske.leolegacy.port.out.RecipeQueryPort;
 import jakarta.enterprise.context.ApplicationScoped;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -44,6 +46,20 @@ public class RecipePersistenceAdapter implements RecipeQueryPort, RecipeCommandP
     }
 
     @Override
+    public List<Recipe> findBySearchTerms(Collection<String> searchTerms, int limit) {
+        if (searchTerms == null || searchTerms.isEmpty()) {
+            return List.of();
+        }
+
+        return recipeRepository.listAll().stream()
+                .map(RecipeEntityMapper::toDomain)
+                .filter(recipe -> containsAnySearchTerm(recipe, searchTerms))
+                .sorted((left, right) -> Integer.compare(matchScore(right, searchTerms), matchScore(left, searchTerms)))
+                .limit(limit)
+                .toList();
+    }
+
+    @Override
     public Optional<Recipe> findById(long id) {
         return Optional.ofNullable(recipeRepository.findById(id))
                 .map(RecipeEntityMapper::toDomain);
@@ -63,5 +79,31 @@ public class RecipePersistenceAdapter implements RecipeQueryPort, RecipeCommandP
         var entity = RecipeEntityMapper.fromImportDraft(draft, category);
         recipeRepository.persist(entity);
         return RecipeEntityMapper.toDomain(entity);
+    }
+
+    private boolean containsAnySearchTerm(Recipe recipe, Collection<String> searchTerms) {
+        String haystack = searchableText(recipe);
+        return searchTerms.stream().anyMatch(haystack::contains);
+    }
+
+    private int matchScore(Recipe recipe, Collection<String> searchTerms) {
+        String haystack = searchableText(recipe);
+        int score = 0;
+        for (String term : searchTerms) {
+            if (haystack.contains(term.toLowerCase(Locale.ROOT))) {
+                score++;
+            }
+        }
+        return score * 100 + recipe.viewCount();
+    }
+
+    private String searchableText(Recipe recipe) {
+        return String.join(
+                " ",
+                recipe.title(),
+                recipe.category().name(),
+                recipe.preparation(),
+                String.join(" ", recipe.ingredients())
+        ).toLowerCase(Locale.ROOT);
     }
 }

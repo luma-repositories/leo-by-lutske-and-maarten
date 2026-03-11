@@ -1,3 +1,5 @@
+import type { ChatMessageContext } from '../../domain/chatbot/ChatbotReply';
+
 export interface CategoryResponseDto {
   id: number;
   name: string;
@@ -23,6 +25,24 @@ export interface RecipeDetailResponseDto {
 
 export interface VersionResponseDto {
   version: string;
+}
+
+export interface ChatbotRecommendationDto {
+  recipeId: number;
+  title: string;
+  categoryName: string;
+  matchReason: string;
+}
+
+export interface ChatbotReplyResponseDto {
+  author: string;
+  message: string;
+  recommendations: ChatbotRecommendationDto[];
+}
+
+export interface ChatbotMessageContextDto {
+  role: string;
+  message: string;
 }
 
 export interface ProposedRecipeDto {
@@ -99,6 +119,20 @@ export async function fetchRecipeDto(id: number): Promise<RecipeDetailResponseDt
   if (!response.ok) {
     throw new Error(`Failed to fetch recipe ${id}`);
   }
+  return response.json();
+}
+
+export async function fetchChatbotReplyDto(message: string, context: ChatMessageContext[]): Promise<ChatbotReplyResponseDto> {
+  const response = await fetch('/api/chatbot/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message, context }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch chatbot reply');
+  }
+
   return response.json();
 }
 

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ImportConfirmRequestDto as ImportConfirmRequest } from './client';
 import {
+  fetchChatbotReplyDto as fetchChatbotReply,
   fetchVersionDto as fetchVersion,
   fetchCategoriesDto as fetchCategories,
   fetchRecipesDto as fetchRecipes,
@@ -146,6 +147,41 @@ describe('API client', () => {
       } as Response);
 
       await expect(fetchRecipe(999)).rejects.toThrow('Failed to fetch recipe 999');
+    });
+  });
+
+  describe('fetchChatbotReply', () => {
+    it('posts the chat message and returns recommendations', async () => {
+      const mockReply = {
+        author: 'Leonardo',
+        message: 'Here are a few ideas.',
+        recommendations: [
+          { recipeId: 37, title: 'Pizza with mushrooms', categoryName: 'Pasta', matchReason: 'Matches: tomato.' },
+        ],
+      };
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockReply),
+      } as Response);
+
+      const result = await fetchChatbotReply('tomato dishes', [{ role: 'user', message: 'I want pasta' }]);
+
+      expect(fetch).toHaveBeenCalledWith('/api/chatbot/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'tomato dishes', context: [{ role: 'user', message: 'I want pasta' }] }),
+      });
+      expect(result).toEqual(mockReply);
+    });
+
+    it('throws on non-ok response', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: false,
+        status: 500,
+      } as Response);
+
+      await expect(fetchChatbotReply('tomato dishes', [])).rejects.toThrow('Failed to fetch chatbot reply');
     });
   });
 

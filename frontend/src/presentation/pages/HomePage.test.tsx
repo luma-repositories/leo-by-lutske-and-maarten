@@ -233,4 +233,37 @@ describe('HomePage', () => {
       expect(screen.getByText(/5,432 views/)).toBeInTheDocument();
     });
   });
+
+  it('renders the Leonardo chatbot on the homepage', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation((url) => {
+      const urlStr = typeof url === 'string' ? url : url.toString();
+      if (urlStr.includes('/api/recipes/top')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockTopRecipes),
+        } as Response);
+      }
+      if (urlStr.includes('/api/categories')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockCategories),
+        } as Response);
+      }
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([]),
+      } as Response);
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <HomePage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(document.getElementById('home-chatbot-container')).toBeInTheDocument();
+      expect(screen.getByText('Meet Leonardo')).toBeInTheDocument();
+    });
+  });
 });

@@ -2,6 +2,8 @@
 
 A full-stack recipe application migrating the legacy leo-legacy.be cooking website into a modern Java 25 + Quarkus backend with a React (TypeScript) frontend.
 
+The homepage now includes Leonardo, a built-in recipe guide chatbot that helps visitors discover recipes from natural-language questions such as asking for tomato-based dishes, something with chicken, pasta ideas, spicy meals, or oven dishes. Leonardo also keeps lightweight in-session conversation context for follow-up refinements.
+
 ## Prerequisites
 
 - **Java 25** (OpenJDK 25) — see [Installing Java 25 with SDKMAN](#installing-java-25-with-sdkman) below
@@ -206,8 +208,11 @@ npm run lint     # ESLint
 | GET    | `/api/recipes`                | All recipes (optional `?categoryId=N` filter)                |
 | GET    | `/api/recipes/top`            | Top 10 most-viewed recipes                                   |
 | GET    | `/api/recipes/{id}`           | Full recipe detail (ingredients + preparation)               |
+| POST   | `/api/chatbot/messages`       | Leonardo chatbot reply with matching recipe recommendations  |
 | POST   | `/api/recipes/import`         | Upload image for AI recipe extraction (multipart/form-data)  |
 | POST   | `/api/recipes/import/confirm` | Confirm and save an imported recipe with user corrections     |
+
+The chatbot supports ingredient-style questions, broader meal phrasing, curated synonym/category matching, clickable prompt chips, stronger exact-match ranking, and lightweight follow-up memory so users can ask for things like tomato-based dishes, something with chicken, veggie ideas, light meals, spicy dishes, or oven dishes and then refine them with follow-ups such as making them vegetarian.
 
 ### Recipe Import from Image (AI-powered)
 
