@@ -1,4 +1,31 @@
 {
+  "common": {
+    "loading": "Loading..."
+  },
+  "header": {
+    "subtitle": "Recipes",
+    "import": "Import"
+  },
+  "footer": {
+    "tagline": "Leo Legacy — a cooking site for food lovers"
+  },
+  "sidebar": {
+    "title": "Recipe Book",
+    "allRecipes": "All Recipes"
+  },
+  "home": {
+    "topHeading": "Most Popular Recipes",
+    "filteredHeading": "Recipes",
+    "empty": "No recipes found.",
+    "views": "{count} views"
+  },
+  "detail": {
+    "ingredients": "Ingredients",
+    "preparation": "Preparation",
+    "notFound": "Recipe not found.",
+    "backToRecipes": "\u2190 Back to recipes",
+    "backToCategory": "\u2190 Back to {category}"
+  },
   "import": {
     "pageTitle": "Import Recipe",
     "pageSubtitle": "Upload a photo of a recipe. The AI will translate and structure it automatically in English.",
@@ -26,6 +53,7 @@
     "cancelBtn": "Cancel",
     "errorSaveFailed": "Save failed. Please try again.",
     "errorNotRecipe": "The image does not appear to contain a recipe.",
+    "previewAlt": "Preview of selected recipe",
     "fieldLabels": {
       "title": "Title",
       "ingredients": "Ingredients",

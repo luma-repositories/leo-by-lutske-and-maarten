@@ -1,9 +1,9 @@
 import { Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import HomePage from './pages/HomePage';
-import RecipeDetailPage from './pages/RecipeDetailPage';
-import ImportRecipePage from './pages/ImportRecipePage';
+import Header from './presentation/components/Header';
+import Footer from './presentation/components/Footer';
+import HomePage from './presentation/pages/HomePage';
+import RecipeDetailPage from './presentation/pages/RecipeDetailPage';
+import ImportRecipePage from './presentation/pages/ImportRecipePage';
 import './App.css';
 
 export default function App() {

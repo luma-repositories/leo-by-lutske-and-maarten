@@ -1,8 +1,7 @@
 package be.lutske.leolegacy.infrastructure.ai;
 
-import be.lutske.leolegacy.application.service.ExtractionResult;
-import be.lutske.leolegacy.application.service.RecipeExtractionException;
-import be.lutske.leolegacy.application.service.RecipeExtractionService;
+import be.lutske.leolegacy.domain.recipe.RecipeExtraction;
+import be.lutske.leolegacy.port.out.RecipeImageExtractionPort;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
@@ -17,16 +16,16 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * LangChain4j-based implementation of {@link RecipeExtractionService}.
+ * LangChain4j-based implementation of {@link RecipeImageExtractionPort}.
  *
  * Sends the uploaded image to a multimodal LLM via LangChain4j and parses
- * the structured JSON response into an {@link ExtractionResult}.
+ * the structured JSON response into a {@link RecipeExtraction}.
  *
  * Provider-specific differences (image encoding, API format) are handled
  * internally — callers only see the provider-agnostic interface.
  */
 @ApplicationScoped
-public class LangChain4jRecipeExtractionService implements RecipeExtractionService {
+public class LangChain4jRecipeExtractionService implements RecipeImageExtractionPort {
 
     private static final Logger LOG = Logger.getLogger(LangChain4jRecipeExtractionService.class);
 
@@ -86,7 +85,7 @@ public class LangChain4jRecipeExtractionService implements RecipeExtractionServi
     }
 
     @Override
-    public ExtractionResult extractRecipeFromImage(byte[] imageBytes, String mimeType) {
+    public RecipeExtraction extractRecipeFromImage(byte[] imageBytes, String mimeType) {
         LOG.infof("Extracting recipe from image using provider=%s, model=%s, mimeType=%s, size=%d bytes",
                 provider, modelName, mimeType, imageBytes.length);
 
@@ -120,10 +119,10 @@ public class LangChain4jRecipeExtractionService implements RecipeExtractionServi
     }
 
     /**
-     * Parse the raw model response (expected JSON) into an {@link ExtractionResult}.
+     * Parse the raw model response (expected JSON) into a {@link RecipeExtraction}.
      * Handles malformed JSON defensively.
      */
-    private ExtractionResult parseModelResponse(String rawResponse) {
+    private RecipeExtraction parseModelResponse(String rawResponse) {
         // Strip markdown code fences if the model wrapped the JSON
         String cleanedJson = CODE_FENCE_START.matcher(rawResponse).replaceAll("");
         cleanedJson = CODE_FENCE_END.matcher(cleanedJson).replaceAll("").trim();
@@ -131,7 +130,7 @@ public class LangChain4jRecipeExtractionService implements RecipeExtractionServi
         try {
             LlmRecipeResponse parsed = objectMapper.readValue(cleanedJson, LlmRecipeResponse.class);
 
-            return new ExtractionResult(
+            return new RecipeExtraction(
                     blankToNull(parsed.title()),
                     blankToNull(parsed.description()),
                     blankToNull(parsed.servings()),
@@ -149,7 +148,7 @@ public class LangChain4jRecipeExtractionService implements RecipeExtractionServi
             LOG.warn("Failed to parse model response as JSON, returning raw response with warnings", e);
 
             // Fallback: return the raw text as a warning so the user can manually extract
-            return new ExtractionResult(
+            return new RecipeExtraction(
                     null, null, null, null, null, null, null,
                     List.of("Model response could not be parsed as structured JSON. " +
                             "Please review the raw response and fill in the recipe fields manually."),

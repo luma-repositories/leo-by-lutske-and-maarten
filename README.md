@@ -72,78 +72,43 @@ OpenJDK 64-Bit Server VM (build 25.0.2+10-69, mixed mode, sharing)
 ## Project Structure
 
 ```
-├── build.gradle.kts                              # Root build file (thin)
-├── settings.gradle.kts                           # Gradle settings (includes backend)
-├── gradle.properties                             # Gradle/Quarkus properties
+├── build.gradle.kts
+├── settings.gradle.kts
 ├── platform/
-│   └── quarkus-platform.gradle                   # Centralized dependency versions
-├── compose.yaml                                  # PostgreSQL 17 (Podman/Docker Compose)
+│   └── quarkus-platform.gradle             # Centralized backend dependency versions
+├── compose.yaml
 ├── backend/
-│   ├── build.gradle.kts                          # Backend build file (Quarkus + JPA)
-│   └── src/
-│       ├── main/
-│       │   ├── java/be/lutske/leolegacy/
-│       │   │   ├── application/service/
-│       │   │   │   ├── RecipeExtractionService.java    # AI extraction interface
-│       │   │   │   ├── ExtractionResult.java           # AI extraction result record
-│       │   │   │   └── RecipeExtractionException.java  # AI extraction exception
-│       │   │   ├── infrastructure/
-│       │   │   │   ├── ai/
-│       │   │   │   │   ├── LangChain4jRecipeExtractionService.java  # LangChain4j implementation
-│       │   │   │   │   └── ChatModelProducer.java                   # CDI ChatModel producer
-│       │   │   │   └── persistence/
-│       │   │   │       ├── entity/
-│       │   │   │       │   ├── RecipeEntity.java       # JPA recipe entity
-│       │   │   │       │   └── CategoryEntity.java     # JPA category entity
-│       │   │   │       └── repository/
-│       │   │   │           ├── RecipeRepository.java   # Panache recipe repository
-│       │   │   │           └── CategoryRepository.java # Panache category repository
-│       │   │   └── interfaceadapter/rest/
-│       │   │       ├── CategoryResource.java           # GET /api/categories
-│       │   │       ├── RecipeResource.java             # GET /api/recipes, /api/recipes/top, /api/recipes/{id}
-│       │   │       ├── RecipeImportResource.java       # POST /api/recipes/import, /api/recipes/import/confirm
-│       │   │       ├── RecipeImportDtos.java           # Import flow DTOs (nested records)
-│       │   │       ├── VersionResource.java            # GET /api/version
-│       │   │       ├── RecipeDetailResponse.java       # Recipe detail DTO
-│       │   │       ├── RecipeSummaryResponse.java      # Recipe list DTO
-│       │   │       ├── CategoryResponse.java           # Category DTO
-│       │   │       ├── VersionResponse.java            # Version DTO
-│       │   │       └── SpaRoutingFilter.java           # SPA routing filter
-│       │   └── resources/
-│       │       ├── application.properties              # Quarkus + datasource + AI config
-│       │       └── db/migration/
-│       │           ├── V1__init.sql                    # Schema (categories + recipes)
-│       │           ├── V2__seed.sql                    # Seed data (14 categories, 106 recipes)
-│       │           ├── V3__add_recipe_import_fields.sql# Import fields (source, created_at)
-│       │           └── V4__add_import_metadata.sql     # AI import metadata column
-│       └── test/
-│           ├── java/be/lutske/leolegacy/
-│           │   ├── application/service/
-│           │   │   └── ExtractionResultValidationTest.java    # ExtractionResult unit tests
-│           │   └── interfaceadapter/rest/
-│           │       ├── VersionResourceTest.java
-│           │       ├── CategoryResourceTest.java
-│           │       ├── RecipeResourceTest.java
-│           │       ├── RecipeImportResourceTest.java       # Import tests (mocked AI extraction)
-│           │       ├── RecipeImportIntegrationTest.java    # E2E import (real Postgres + AI, @Tag("integration"))
-│           │       └── PostgresIntegrationTestProfile.java # Test profile for real DB
-│           └── resources/
-│               ├── application.properties              # H2 test config
-│               └── testdata/test-recipe.jpg            # Handwritten recipe image for E2E
+│   ├── build.gradle.kts
+│   └── src/main/java/be/lutske/leolegacy/
+│       ├── domain/                         # Framework-free recipe/category business models
+│       ├── usecase/                        # Application workflows per user action
+│       ├── port/out/                       # Interfaces implemented by infrastructure
+│       ├── infrastructure/
+│       │   ├── ai/                         # LangChain4j adapter + provider wiring
+│       │   └── persistence/
+│       │       ├── entity/                 # JPA entities
+│       │       ├── jpa/                    # Domain/entity mappers + persistence adapters
+│       │       └── repository/             # Panache repositories
+│       └── entrypoint/rest/                # REST resources + transport DTOs
 ├── frontend/
-│   ├── package.json                                    # Vite + React + TypeScript
-│   ├── vite.config.ts                                  # Dev proxy /api -> localhost:8080
+│   ├── package.json
 │   └── src/
-│       ├── main.tsx                                    # App entry point
-│       ├── App.tsx                                     # Layout (Header + Routes + Footer)
-│       ├── theme.css                                   # Italian color palette (green/white/red)
-│       ├── api/client.ts                               # API types + fetch helpers
-│       ├── i18n/useTranslation.ts                      # Simple i18n hook
-│       ├── locales/nl.json                             # Dutch translations
-│       ├── components/                                 # Header, Footer, CategorySidebar
-│       └── pages/                                      # HomePage, RecipeDetailPage, ImportRecipePage
-└── release-notes/                                      # Release notes per change
+│       ├── domain/                         # UI-agnostic models
+│       ├── application/                    # Queries, commands, import orchestration helpers
+│       ├── infrastructure/api/             # Fetch DTOs and HTTP client code
+│       ├── presentation/                   # Pages, components, hooks
+│       ├── shared/i18n/                    # Shared translation hook
+│       └── locales/                        # Translation dictionaries
+└── release-notes/
 ```
+
+## Architecture Notes
+
+- Backend uses a Clean Architecture style split: `domain` and `usecase` stay independent from Quarkus, Panache, and LangChain4j.
+- Persistence and AI integrations live under `backend/src/main/java/be/lutske/leolegacy/infrastructure/` and implement ports defined closer to the core.
+- REST endpoints live under `backend/src/main/java/be/lutske/leolegacy/entrypoint/rest/` and only coordinate HTTP concerns plus mapping.
+- Frontend follows the same direction: `domain` and `application` stay framework-light, `infrastructure/api` owns fetch/DTO details, and `presentation` owns React rendering.
+- Frontend tests still live in some legacy folders, but production code now imports the clean-layered paths directly.
 
 ## How to Run
 
@@ -249,11 +214,10 @@ npm run lint     # ESLint
 Upload a photo of a recipe and the backend uses a multimodal LLM (via LangChain4j) to extract structured recipe data. The flow:
 
 1. **Upload**: `POST /api/recipes/import` with a multipart image file (PNG, JPG, WEBP, max 10 MB)
-2. **Full extraction → 201**: If title, ingredients, and preparation are all detected, the recipe is saved and returned
-3. **Needs more info → 422**: If fields are missing, returns the raw model response, a proposed recipe, missing fields list, and warnings
-4. **Confirm**: `POST /api/recipes/import/confirm` with the proposed recipe + user overrides → saves and returns the final recipe
+2. **Review response → 200**: The API always returns extracted data for review, plus missing fields and warnings when needed
+3. **Confirm**: `POST /api/recipes/import/confirm` with the proposed recipe + user overrides → saves and returns the final recipe with `201 Created`
 
-Imported recipes are assigned to the "Geimporteerd" category. The LLM preserves the original language of the recipe.
+Imported recipes are assigned to the imported category fallback when no valid category is provided. The LLM translates extracted recipe content to English before returning it.
 
 #### Supported AI Providers
 

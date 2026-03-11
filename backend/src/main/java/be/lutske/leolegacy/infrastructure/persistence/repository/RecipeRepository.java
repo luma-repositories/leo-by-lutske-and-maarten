@@ -18,4 +18,8 @@ public class RecipeRepository implements PanacheRepository<RecipeEntity> {
                 .limit(limit)
                 .toList();
     }
+
+    public long countByCategoryId(long categoryId) {
+        return count("category.id", categoryId);
+    }
 }

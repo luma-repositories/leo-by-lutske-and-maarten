@@ -1,5 +1,7 @@
 package be.lutske.leolegacy.application.service;
 
+import be.lutske.leolegacy.domain.recipe.RecipeExtraction;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -9,14 +11,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Unit tests for {@link ExtractionResult} validation logic.
+ * Unit tests for {@link RecipeExtraction} validation logic.
  * These do NOT require Quarkus — they test pure domain logic.
  */
 class ExtractionResultValidationTest {
 
     @Test
     void completeExtractionHasNoMissingFields() {
-        var result = new ExtractionResult(
+        var result = new RecipeExtraction(
                 "Chocolate Mousse", null, null,
                 List.of("200 g chocolate", "4 eggs", "50 g sugar"),
                 List.of("Melt chocolate", "Separate eggs", "Fold together"),
@@ -28,7 +30,7 @@ class ExtractionResultValidationTest {
 
     @Test
     void missingTitleIsDetected() {
-        var result = new ExtractionResult(
+        var result = new RecipeExtraction(
                 null, null, null,
                 List.of("200 g chocolate"),
                 List.of("Melt chocolate"),
@@ -40,7 +42,7 @@ class ExtractionResultValidationTest {
 
     @Test
     void blankTitleIsTreatedAsMissing() {
-        var result = new ExtractionResult(
+        var result = new RecipeExtraction(
                 "   ", null, null,
                 List.of("200 g chocolate"),
                 List.of("Melt chocolate"),
@@ -52,7 +54,7 @@ class ExtractionResultValidationTest {
 
     @Test
     void missingIngredientsIsDetected() {
-        var result = new ExtractionResult(
+        var result = new RecipeExtraction(
                 "Chocolate Mousse", null, null,
                 null,
                 List.of("Melt chocolate"),
@@ -64,7 +66,7 @@ class ExtractionResultValidationTest {
 
     @Test
     void emptyIngredientsListIsTreatedAsMissing() {
-        var result = new ExtractionResult(
+        var result = new RecipeExtraction(
                 "Chocolate Mousse", null, null,
                 List.of(),
                 List.of("Melt chocolate"),
@@ -76,7 +78,7 @@ class ExtractionResultValidationTest {
 
     @Test
     void missingStepsIsDetectedAsMissingPreparation() {
-        var result = new ExtractionResult(
+        var result = new RecipeExtraction(
                 "Chocolate Mousse", null, null,
                 List.of("200 g chocolate"),
                 null,
@@ -88,7 +90,7 @@ class ExtractionResultValidationTest {
 
     @Test
     void emptyStepsListIsTreatedAsMissingPreparation() {
-        var result = new ExtractionResult(
+        var result = new RecipeExtraction(
                 "Chocolate Mousse", null, null,
                 List.of("200 g chocolate"),
                 List.of(),
@@ -100,7 +102,7 @@ class ExtractionResultValidationTest {
 
     @Test
     void allFieldsMissingReturnsThreeMissingFields() {
-        var result = new ExtractionResult();
+        var result = new RecipeExtraction(null, null, null, null, null, null, null, null, null, null, null);
 
         assertFalse(result.isComplete());
         assertEquals(List.of("title", "ingredients", "preparation"), result.missingFields());
@@ -108,7 +110,7 @@ class ExtractionResultValidationTest {
 
     @Test
     void warningsArePreservedInResult() {
-        var result = new ExtractionResult(
+        var result = new RecipeExtraction(
                 "Test", null, null,
                 List.of("item"),
                 List.of("step"),
@@ -123,7 +125,7 @@ class ExtractionResultValidationTest {
 
     @Test
     void providerAndModelMetadataArePreserved() {
-        var result = new ExtractionResult(
+        var result = new RecipeExtraction(
                 "Test", null, null,
                 List.of("item"),
                 List.of("step"),
@@ -136,7 +138,7 @@ class ExtractionResultValidationTest {
 
     @Test
     void optionalFieldsDoNotAffectCompleteness() {
-        var result = new ExtractionResult(
+        var result = new RecipeExtraction(
                 "Test", null, null,
                 List.of("item"),
                 List.of("step"),
@@ -150,7 +152,7 @@ class ExtractionResultValidationTest {
     void rawModelResponseIsPreserved() {
         String rawJson = """
                 {"title":"Test","ingredients":["item"],"steps":["step"]}""";
-        var result = new ExtractionResult(
+        var result = new RecipeExtraction(
                 "Test", null, null,
                 List.of("item"),
                 List.of("step"),
