@@ -253,7 +253,7 @@ Upload a photo of a recipe and the backend uses a multimodal LLM (via LangChain4
 3. **Needs more info → 422**: If fields are missing, returns the raw model response, a proposed recipe, missing fields list, and warnings
 4. **Confirm**: `POST /api/recipes/import/confirm` with the proposed recipe + user overrides → saves and returns the final recipe
 
-Imported recipes are assigned to the "Geimporteerd" category. The LLM preserves the original language of the recipe.
+Imported recipes are assigned to the "Imported" category. The LLM translates all extracted content to English.
 
 #### Supported AI Providers
 
@@ -268,7 +268,7 @@ Imported recipes are assigned to the "Geimporteerd" category. The LLM preserves 
 - **PostgreSQL 17** in development (via Podman Compose)
 - **H2 in-memory** (PostgreSQL compatibility mode) for tests
 - **Flyway** manages schema migrations in `backend/src/main/resources/db/migration/`
-- 15 categories (14 original + "Geimporteerd") and 106 recipes seeded from the original static site
+- 15 categories (14 original + "Imported") and 106 recipes seeded from the original static site
 
 ## Configuration
 

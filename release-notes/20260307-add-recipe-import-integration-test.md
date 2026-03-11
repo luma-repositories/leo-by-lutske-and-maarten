@@ -18,7 +18,7 @@
 |---|---|
 | `full import flow - upload handwritten image and verify recipe is persisted in database` | Real OCR on handwritten image → handles 201 or 422 → confirm with overrides → validates all recipe fields (title, 7 ingredients, preparation, category, viewCount) → fetches from DB via GET endpoint to verify persistence |
 | `upload real image produces OCR output without server error` | Verifies OCR doesn't crash on real handwritten image, validates response structure (rawText, missingFields, proposedRecipe for 422; or title/ingredients for 201) |
-| `imported recipe appears in Geimporteerd category listing` | Confirms recipe via import/confirm → verifies it appears in GET /api/recipes?categoryId=15 listing |
+| `imported recipe appears in Imported category listing` | Confirms recipe via import/confirm → verifies it appears in GET /api/recipes?categoryId=15 listing |
 
 ## Prerequisites
 - `podman compose up -d` must be running (PostgreSQL)

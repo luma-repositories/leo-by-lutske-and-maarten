@@ -4,7 +4,7 @@
 - Added a full-stack "Recipe Import from Image" feature that uses Tesseract OCR (via Tess4J) to extract text from uploaded recipe photos, parse it into structured recipe data, and either save it directly or present a review form for the user to fill in missing fields.
 - Backend: two new REST endpoints (`POST /api/recipes/import` for multipart upload, `POST /api/recipes/import/confirm` for user-corrected data), plus `OcrService`, `RecipeParserService`, and supporting DTOs.
 - Frontend: new `ImportRecipePage` with image upload, preview, loading state, OCR review form (raw text + editable fields), and confirm/cancel flow. "Importeer" button added to the Header.
-- New "Geimporteerd" category (id=15) for imported recipes.
+- New "Imported" category (id=15) for imported recipes.
 - Database migration `V3__add_recipe_import_fields.sql` adds `source` and `created_at` columns to the recipe table.
 
 ## User Impact
@@ -25,7 +25,7 @@
 
 ## Migration Notes
 - `V3__add_recipe_import_fields.sql` adds two nullable columns (`source`, `created_at`) to the `recipe` table — no data migration needed.
-- Inserts the "Geimporteerd" category with id=15.
+- Inserts the "Imported" category with id=15.
 - Resets identity sequences to avoid conflicts with seed data.
 
 ## Test Coverage Mapping
