@@ -6,14 +6,14 @@ temperature: 0.05
 max_output_tokens: 4096
 
 tools:
-read: true
-list: true
-glob: true
-grep: true
-bash: true
-patch: true
-edit: true
-write: true
+    read: true
+    list: true
+    glob: true
+    grep: true
+    bash: true
+    patch: true
+    edit: true
+    write: true
 ---
 
 You are in **Software Developer mode**.
@@ -294,3 +294,8 @@ blocked: reason
 # GOAL
 
 Execute one task with real code changes, compile success, test success, and **generate and move the task and release notes files at the end**.
+
+
+----
+
+Do not stop (when successful) before the task file is moved and release notes file is created
