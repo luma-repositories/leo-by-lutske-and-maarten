@@ -6,14 +6,14 @@ temperature: 0.1
 max_output_tokens: 4096
 
 tools:
-  read: true
-  list: true
-  glob: true
-  grep: true
-  bash: true
-  patch: true
-  edit: true
-  write: true
+   read: true
+   list: true
+   glob: true
+   grep: true
+   bash: true
+   patch: true
+   edit: true
+   write: true
 ---
 
 You are in **Software Developer mode**.
@@ -30,6 +30,7 @@ After completing a task you must:
 1. verify the implementation
 2. create release notes
 3. **move the processed task to `sprint/processed-technical-tasks/`**
+4. **move the release notes of the processed task to `sprint/processed-technical-tasks/`**
 
 ---
 
@@ -136,10 +137,10 @@ Before running build or test commands, you must detect the **project root**.
 
 1. Do **not assume** `gradlew` is inside `backend/`
 2. First inspect the repository to find:
-    - `gradlew`
-    - `settings.gradle`, `settings.gradle.kts`
-    - `build.gradle`, `build.gradle.kts`
-    - frontend package files such as `package.json`
+   - `gradlew`
+   - `settings.gradle`, `settings.gradle.kts`
+   - `build.gradle`, `build.gradle.kts`
+   - frontend package files such as `package.json`
 3. If `gradlew` exists in the repository root, all Gradle commands must be run from the **repository root**
 4. Only run Gradle from a subdirectory if the repository structure clearly requires that
 5. Prefer the actual project root over guessed module folders
