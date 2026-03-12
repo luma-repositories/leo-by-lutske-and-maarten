@@ -1,0 +1,30 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "redhat-openshift-vllm": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Qwen Local",
+      "options": {
+        "baseURL": "https://litellm-prod.apps.maas.redhatworkshops.io/v1",
+        "apiKey": "sk-yA8OcF3qHDrOCzu5sWZi9A"
+      },
+      "models": {
+        "qwen3-14b": {
+          "name": "Qwen 3 14B",
+          "options": {
+            "max_tokens": 8192,
+            "temperature": 0.1
+          }
+        },
+          "deepseek-r1-distill-qwen-14b": {
+            "name": "DeepSeek R1 Distill Qwen 14B",
+            "options": {
+              "max_tokens": 8192,
+              "temperature": 0.1
+            }
+        }
+      }
+    }
+  },
+  "model": "redhat-openshift-vllm/deepseek-r1-distill-qwen-14b"
+}
