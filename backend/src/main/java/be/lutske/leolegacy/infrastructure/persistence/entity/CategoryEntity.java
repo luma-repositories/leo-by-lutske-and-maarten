@@ -1,6 +1,6 @@
 package be.lutske.leolegacy.infrastructure.persistence.entity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "category")

@@ -3,8 +3,8 @@ package be.lutske.leolegacy.infrastructure.persistence.repository;
 import be.lutske.leolegacy.domain.category.Category;
 import be.lutske.leolegacy.domain.category.CategoryRepository;
 import be.lutske.leolegacy.infrastructure.persistence.entity.CategoryEntity;
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
 

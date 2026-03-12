@@ -1,2 +1,3 @@
-* flow for tickets that are resolved
-* communication between agents e.g., developer questions for architect
+* flow for tickets that are resolved => ticket system required => custom build
+* communication between agents e.g., developer questions for architect => chat interface => adapter layer
+* sequence is not unique

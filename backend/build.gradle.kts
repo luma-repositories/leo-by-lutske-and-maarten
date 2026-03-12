@@ -1,24 +1,41 @@
 plugins {
     java
-    application
-    id("io.quarkus.quarkus-plugin") version "3.15.0"
+    id("io.quarkus")
 }
+
+// Apply the centralized platform configuration
+apply(from = "../platform/quarkus-platform.gradle")
 
 repositories {
     mavenCentral()
-    maven { url = uri("https://maven.quarkus.io") }
 }
 
+// Access the centralized dependency definitions
+val libs = project.extra["libs"] as Map<String, String>
+
 dependencies {
-    implementation("io.quarkus:quarkus-hibernate-orm")
-    implementation("io.quarkus:quarkus-resteasy")
-    implementation("io.quarkus:quarkus-jdbc-h2")
-    implementation("dev.langchain4j:langchain4j-chat-models:0.23.0")
-    implementation("dev.langchain4j:langchain4j-data:0.23.0")
-    implementation("org.jboss.logging:jboss-logging:3.4.1.Final")
-    testImplementation("io.quarkus:quarkus-junit5")
-    testImplementation("io.quarkus:quarkus-test-framework")
+    // Import Quarkus BOM
+    implementation(enforcedPlatform(libs["quarkusBom"]!!))
     
+    // Core Quarkus extensions
+    implementation(libs["quarkusRest"]!!)
+    implementation(libs["quarkusRestJackson"]!!)
+    implementation(libs["quarkusArc"]!!)
+    
+    // Database
+    implementation(libs["quarkusHibernateOrm"]!!)
+    implementation(libs["quarkusJdbcPostgresql"]!!)
+    implementation(libs["quarkusFlyway"]!!)
+    
+    // LangChain4j
+    implementation(libs["langchain4jOpenai"]!!)
+    implementation(libs["langchain4jAnthropic"]!!)
+    
+    // Test dependencies
+    testImplementation(libs["quarkusJunit5"]!!)
+    testImplementation(libs["quarkusMockito"]!!)
+    testImplementation(libs["quarkusTestH2"]!!)
+    testImplementation(libs["restAssured"]!!)
 }
 
 java {

@@ -3,8 +3,8 @@ package be.lutske.leolegacy.infrastructure.persistence.repository;
 import be.lutske.leolegacy.domain.recipe.Recipe;
 import be.lutske.leolegacy.domain.recipe.RecipeRepository;
 import be.lutske.leolegacy.infrastructure.persistence.entity.RecipeEntity;
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
 

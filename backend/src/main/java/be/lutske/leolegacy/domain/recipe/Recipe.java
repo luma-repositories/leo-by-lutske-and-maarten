@@ -2,23 +2,28 @@ package be.lutske.leolegacy.domain.recipe;
 
 import java.time.LocalDateTime;
 import java.util.Set;
+import be.lutske.leolegacy.domain.category.Category;
 
 public class Recipe {
-    private String id;
+    private Long id;
     private String title;
     private String description;
     private String imageUrl;
+    private String ingredients;
+    private String instructions;
+    private int viewCount;
+    private Category category;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Set<String> tags;
     private String userId;
 
     // Getters and setters
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
@@ -45,6 +50,40 @@ public class Recipe {
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
+
+    public String getIngredients() {
+        return ingredients;
+    }
+
+    public void setIngredients(String ingredients) {
+        this.ingredients = ingredients;
+    }
+
+    public String getInstructions() {
+        return instructions;
+    }
+
+    public void setInstructions(String instructions) {
+        this.instructions = instructions;
+    }
+
+    public int getViewCount() {
+        return viewCount;
+    }
+
+    public void setViewCount(int viewCount) {
+        this.viewCount = viewCount;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
+    }
+
+}
 
     public LocalDateTime getCreatedAt() {
         return createdAt;

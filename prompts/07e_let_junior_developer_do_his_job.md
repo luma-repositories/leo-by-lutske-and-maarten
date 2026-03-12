@@ -24,10 +24,31 @@ Do your thing for 0013-refactor_backend_for_clean_architecture-create_domain_eve
 Do your thing for 0014-refactor_backend_for_clean_architecture-create_architectural_testing
 
 Do your thing for 0015-refactor_backend_for_clean_architecture-create_integration_testing_framework
+=> ask the enterprise architect to have a look why the project is not building anymore and assign it in tasks for the developer
+=> prompt to list the tickets to make the build succeed
 
 
 
 
+Do your thing for 0017-fix_quarkus_build-add_quarkus_plugin_and_bom
+
+Do your thing for 0018-fix_quarkus_build-replace_spring_with_quarkus_dependencies
+
+Do your thing for 0019-fix_quarkus_build-verify_quarkus_build_success
+
+= Question from junior developer: 
+The attempt to fetch the repository from the provided URL resulted in a 404 error, indicating the URL might be invalid or the repository is not publicly accessible. To proceed, could you clarify the following:
+1. Repository Access: Is the repository hosted privately, or should the URL be adjusted? If it's a local project, we can focus on the files you've already described.
+2. Build Configuration: Are you confident the build.gradle.kts file includes all required Quarkus extensions (e.g., quarkus-hibernate-orm, quarkus-resteasy, quarkus-jdbc-h2) and LangChain4j dependencies?
+3. Dependency Conflicts: Are there any specific error messages during the build that indicate missing or conflicting libraries?
+   This will help resolve the issue without relying on external fetches.
+
+Do your thing for 0020-fix_quarkus_build-remove_conflicting_build_file
+
+Do your thing for 0019-fix_quarkus_build-verify_quarkus_build_success
+=> Ask enterprise architect to fix the gradle clean build command
+
+Do your thing for 0021-fix_compilation_errors-update_jpa_imports_and_entity_issues
 
 
 
