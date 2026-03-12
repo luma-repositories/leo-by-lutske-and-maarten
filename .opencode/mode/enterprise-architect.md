@@ -292,7 +292,8 @@ technical-tasks/
 3. Use filename format:
 
 
-<userstoryname>-<taskname>.md
+<sequence-number-4-numbers>-<userstoryname>-<taskname>.md
+Sequence number should be unique and should be given the execution order
 
 
 4. Return the generated tasks in the response.
