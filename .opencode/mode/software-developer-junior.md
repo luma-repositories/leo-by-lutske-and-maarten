@@ -1,5 +1,5 @@
 ---
-name: software-developer
+name: software-developer-junior
 description: "Implements a single technical task exactly as specified. No interpretation or scope expansion."
 model: qwen-local/qwen3-14b
 temperature: 0.1
