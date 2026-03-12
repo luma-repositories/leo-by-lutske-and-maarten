@@ -1,3 +1,20 @@
 # Prompt
+_The given prompts where executed one by one_
 
 Do your thing for refactor_backend_for_clean_architecture-create_domain_entities
+
+Do your thing for refactor_backend_for_clean_architecture-create_domain_repository_interfaces
+
+Do your thing for refactor_backend_for_clean_architecture-create_infrastructure_adapters
+
+Do your thing for refactor_backend_for_clean_architecture-enhance_testing_architecture
+
+Do your thing for refactor_backend_for_clean_architecture-implement_domain_events
+
+Do your thing for refactor_backend_for_clean_architecture-implement_recipe_use_cases
+
+Do your thing for refactor_backend_for_clean_architecture-refactor_rest_controllers
+
+Do your thing for refactor_backend_for_clean_architecture-refactor_transaction_management
+
+Do your thing for refactor_backend_for_clean_architecture-update_architecture_documentation
