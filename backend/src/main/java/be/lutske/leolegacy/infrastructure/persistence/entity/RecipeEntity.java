@@ -1,5 +1,7 @@
 package be.lutske.leolegacy.infrastructure.persistence.entity;
 
+import java.time.Instant;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -10,12 +12,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
-import java.time.Instant;
-
 @Entity
-@Table(name = "recipe")
+@Table(name = "recipes")
 public class RecipeEntity {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

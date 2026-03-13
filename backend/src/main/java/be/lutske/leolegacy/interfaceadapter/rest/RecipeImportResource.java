@@ -3,32 +3,31 @@ package be.lutske.leolegacy.interfaceadapter.rest;
 import be.lutske.leolegacy.application.service.ExtractionResult;
 import be.lutske.leolegacy.application.service.RecipeExtractionException;
 import be.lutske.leolegacy.application.service.RecipeExtractionService;
-import be.lutske.leolegacy.infrastructure.persistence.entity.RecipeEntity;
-import be.lutske.leolegacy.infrastructure.persistence.repository.CategoryRepository;
-import be.lutske.leolegacy.infrastructure.persistence.repository.RecipeRepository;
-import be.lutske.leolegacy.interfaceadapter.rest.RecipeImportDtos.ImportConfirmRequest;
-import be.lutske.leolegacy.interfaceadapter.rest.RecipeImportDtos.ImportExtractionResponse;
-import be.lutske.leolegacy.interfaceadapter.rest.RecipeImportDtos.ProposedRecipeDto;
-import jakarta.transaction.Transactional;
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import org.jboss.resteasy.reactive.RestForm;
-import org.jboss.resteasy.reactive.multipart.FileUpload;
+    import be.lutske.leolegacy.application.usecase.ImportRecipeUseCase;
+    import be.lutske.leolegacy.domain.entity.RecipeEntity;
+    import be.lutske.leolegacy.interfaceadapter.rest.RecipeImportDtos.ImportConfirmRequest;
+    import be.lutske.leolegacy.interfaceadapter.rest.RecipeImportDtos.ImportExtractionResponse;
+    import be.lutske.leolegacy.interfaceadapter.rest.RecipeImportDtos.ProposedRecipeDto;
+    import jakarta.transaction.Transactional;
+    import jakarta.ws.rs.BadRequestException;
+    import jakarta.ws.rs.Consumes;
+    import jakarta.ws.rs.POST;
+    import jakarta.ws.rs.Path;
+    import jakarta.ws.rs.Produces;
+    import jakarta.ws.rs.core.MediaType;
+    import jakarta.ws.rs.core.Response;
+    import org.jboss.resteasy.reactive.RestForm;
+    import org.jboss.resteasy.reactive.multipart.FileUpload;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+    import java.io.IOException;
+    import java.nio.file.Files;
+    import java.time.Instant;
+    import java.util.Arrays;
+    import java.util.List;
+    import java.util.Map;
+    import java.util.Set;
 
-/**
+    /**
  * REST resource for importing recipes from images via AI-powered extraction.
  *
  * <p>Flow:
@@ -48,12 +47,10 @@ public class RecipeImportResource {
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("png", "jpg", "jpeg", "webp");
 
     private final RecipeExtractionService extractionService;
-    private final RecipeRepository recipeRepository;
-    private final CategoryRepository categoryRepository;
+    private final ImportRecipeUseCase importRecipeUseCase;
 
     public RecipeImportResource(RecipeExtractionService extractionService,
-                                RecipeRepository recipeRepository,
-                                CategoryRepository categoryRepository) {
+                                ImportRecipeUseCase importRecipeUseCase) {
         this.extractionService = extractionService;
         this.recipeRepository = recipeRepository;
         this.categoryRepository = categoryRepository;
@@ -203,21 +200,10 @@ public class RecipeImportResource {
             throw new IllegalStateException("Default import category not found");
         }
 
-        var recipe = new RecipeEntity();
-        recipe.setTitle(proposal.title() != null ? proposal.title() : "Untitled Recipe");
-        recipe.setIngredients(proposal.ingredients() != null ? String.join("|", proposal.ingredients()) : "");
-        recipe.setPreparation(proposal.preparation() != null ? proposal.preparation() : "");
-        recipe.setCategory(category);
-        recipe.setViewCount(0);
-        recipe.setSource(proposal.source() != null ? proposal.source() : "Imported from image");
-        recipe.setCreatedAt(Instant.now());
-
-        if (rawModelResponse != null) {
-            recipe.setImportMetadata(rawModelResponse);
-        }
-
-        recipeRepository.persist(recipe);
-        return recipe;
+        RecipeEntity recipe = importRecipeUseCase.execute(proposal, rawModelResponse);
+        return Response.status(Response.Status.CREATED)
+                .entity(toDetailResponse(recipe))
+                .build();
     }
 
     private RecipeDetailResponse toDetailResponse(RecipeEntity entity) {

@@ -1,37 +1,27 @@
 package be.lutske.leolegacy.interfaceadapter.rest;
 
-import be.lutske.leolegacy.infrastructure.persistence.repository.CategoryRepository;
-import be.lutske.leolegacy.infrastructure.persistence.repository.RecipeRepository;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
+import be.lutske.leolegacy.application.usecase.ListCategoriesUseCase;
+import be.lutske.leolegacy.domain.category.Category;
+import be.lutske.leolegacy.interfaceadapter.dto.CategoryResponse;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
-
 import java.util.List;
 
-/**
- * REST resource for recipe categories.
- */
 @Path("/api/categories")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 public class CategoryResource {
 
-    private final CategoryRepository categoryRepository;
-    private final RecipeRepository recipeRepository;
-
-    public CategoryResource(CategoryRepository categoryRepository, RecipeRepository recipeRepository) {
-        this.categoryRepository = categoryRepository;
-        this.recipeRepository = recipeRepository;
-    }
+    @Inject
+    ListCategoriesUseCase listCategoriesUseCase;
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<CategoryResponse> listCategories() {
-        return categoryRepository.findAllOrderedByName().stream()
-                .map(cat -> new CategoryResponse(
-                        cat.getId(),
-                        cat.getName(),
-                        recipeRepository.findByCategoryId(cat.getId()).size()
-                ))
-                .toList();
+    public Response listCategories() {
+        List<Category> categories = listCategoriesUseCase.execute();
+        return Response.ok(categories.stream()
+                .map(CategoryResponse::fromDomain)
+                .toList())
+                .build();
     }
 }
