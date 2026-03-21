@@ -67,6 +67,31 @@ class RecipeParserServiceTest {
     }
 
     @Test
+    void parseRecipeWithItalianHeadings() {
+        String text = """
+                Tiramisù
+
+                Ingredienti:
+                3 uova
+                250 g mascarpone
+                200 g savoiardi
+
+                Procedimento:
+                Separa i tuorli dagli albumi.
+                Monta i tuorli con lo zucchero e aggiungi il mascarpone.
+                Inzuppa i savoiardi nel caffè e alternali con la crema.""";
+
+        var result = parser.parse(text);
+
+        assertEquals("Tiramisù", result.proposedRecipe().title());
+        assertNotNull(result.proposedRecipe().ingredients());
+        assertEquals(3, result.proposedRecipe().ingredients().size());
+        assertNotNull(result.proposedRecipe().preparation());
+        assertTrue(result.proposedRecipe().preparation().contains("savoiardi"));
+        assertTrue(result.missingFields().isEmpty());
+    }
+
+    @Test
     void parseRecipeWithAllCapsTitle() {
         String text = """
                 CHOCOLATE MOUSSE

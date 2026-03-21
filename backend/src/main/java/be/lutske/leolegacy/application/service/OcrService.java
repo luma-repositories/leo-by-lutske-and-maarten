@@ -25,7 +25,7 @@ public class OcrService {
 
     public OcrService(
             @ConfigProperty(name = "ocr.tessdata-path", defaultValue = "/usr/local/share/tessdata") String tessdataPath,
-            @ConfigProperty(name = "ocr.language", defaultValue = "eng") String language) {
+            @ConfigProperty(name = "ocr.language", defaultValue = "ita+eng") String language) {
         this.tessdataPath = tessdataPath;
         this.language = language;
     }

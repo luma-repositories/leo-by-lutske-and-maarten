@@ -7,7 +7,8 @@ A full-stack recipe application migrating the legacy leo-legacy.be cooking websi
 - **Java 25** (OpenJDK 25) — see [Installing Java 25 with SDKMAN](#installing-java-25-with-sdkman) below
 - **Node.js 18+** and **npm** (for the frontend build)
 - **Podman** (or Docker) for local PostgreSQL
-- **Tesseract OCR** (for recipe image import) — `brew install tesseract` on macOS
+- **Tesseract OCR** (for recipe image import) — `brew install tesseract` on macOS  
+  Ensure the Italian trained data (`ita.traineddata`) is present in `tessdata` (package `tesseract-ocr-ita` on Debian/Ubuntu).
 - No global Gradle installation needed (uses Gradle wrapper)
 
 ## Installing Java 25 with SDKMAN
@@ -223,7 +224,7 @@ npm run lint     # ESLint
 ### Recipe Import Flow
 
 1. **Upload**: `POST /api/recipes/import` with an image (PNG/JPG/WEBP, max 10 MB)
-2. **OCR**: Tesseract extracts text, parser attempts to identify title, ingredients, and preparation
+2. **OCR**: Tesseract extracts text (default language: Italian + English), parser attempts to identify title, ingredients, and preparation
 3. **Response**: 201 (fully parsed + saved) or 422 (needs more info — returns proposed recipe + missing fields)
 4. **Confirm**: `POST /api/recipes/import/confirm` with proposed recipe + user overrides → 201 (saved)
 
@@ -246,7 +247,7 @@ Key application properties (`backend/src/main/resources/application.properties`)
 | `quarkus.datasource.password`         | `leo_secret`                                     | Database password             |
 | `quarkus.flyway.migrate-at-start`     | `true`                                           | Auto-run migrations           |
 | `ocr.tessdata-path`                   | `/usr/local/share/tessdata`                      | Tesseract data directory      |
-| `ocr.language`                        | `eng`                                            | OCR language                  |
+| `ocr.language`                        | `ita+eng`                                        | OCR language (Italian + English) |
 | `quarkus.http.limits.max-body-size`   | `10M`                                            | Max upload size               |
 
 ## Tech Stack

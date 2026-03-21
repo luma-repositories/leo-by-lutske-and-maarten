@@ -22,16 +22,17 @@ public class RecipeParserService {
 
     private static final List<String> INGREDIENT_HEADINGS = List.of(
             "ingredients", "ingredienten", "benodigdheden", "wat heb je nodig",
-            "ingredient", "ingrediënten"
+            "ingredient", "ingrediÃ«nten", "ingredienti"
     );
 
     private static final List<String> INSTRUCTION_HEADINGS = List.of(
             "instructions", "directions", "method", "steps", "preparation",
-            "bereiding", "bereidingswijze", "werkwijze", "stappen"
+            "bereiding", "bereidingswijze", "werkwijze", "stappen",
+            "procedimento", "istruzioni", "preparazione", "passaggi"
     );
 
     private static final Pattern INGREDIENT_LINE_PATTERN = Pattern.compile(
-            "^\\s*(\\d|½|¼|¾|⅓|⅔|•|[-–—*]|\\d+[.,/]\\d+)\\s*.*",
+            "^\\s*(\\d|1/2|1/4|3/4|½|¼|¾|⅓|⅔|•|[-–—*]|\\d+[.,/]\\d+)\\s*.*",
             Pattern.CASE_INSENSITIVE
     );
 
