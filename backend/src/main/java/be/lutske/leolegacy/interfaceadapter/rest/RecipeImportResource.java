@@ -1,6 +1,8 @@
 package be.lutske.leolegacy.interfaceadapter.rest;
 
 import be.lutske.leolegacy.application.service.ExtractionResult;
+import be.lutske.leolegacy.application.service.IngredientConversion;
+import be.lutske.leolegacy.application.service.IngredientConverter;
 import be.lutske.leolegacy.application.service.RecipeExtractionException;
 import be.lutske.leolegacy.application.service.RecipeExtractionService;
 import be.lutske.leolegacy.infrastructure.persistence.entity.RecipeEntity;
@@ -50,13 +52,16 @@ public class RecipeImportResource {
     private final RecipeExtractionService extractionService;
     private final RecipeRepository recipeRepository;
     private final CategoryRepository categoryRepository;
+    private final IngredientConverter ingredientConverter;
 
     public RecipeImportResource(RecipeExtractionService extractionService,
                                 RecipeRepository recipeRepository,
-                                CategoryRepository categoryRepository) {
+                                CategoryRepository categoryRepository,
+                                IngredientConverter ingredientConverter) {
         this.extractionService = extractionService;
         this.recipeRepository = recipeRepository;
         this.categoryRepository = categoryRepository;
+        this.ingredientConverter = ingredientConverter;
     }
 
     /**
@@ -90,7 +95,7 @@ public class RecipeImportResource {
                     .build();
         }
 
-        var proposed = toProposedDto(extraction);
+        var proposed = enrichWithConversions(toProposedDto(extraction));
         String status = extraction.isComplete() ? "COMPLETE" : "NEEDS_MORE_INFO";
 
         return Response.ok(new ImportExtractionResponse(
@@ -134,12 +139,13 @@ public class RecipeImportResource {
                 ? preparation + "\n\nNotes: " + notes
                 : preparation;
 
-        var merged = new ProposedRecipeDto(
+        var merged = enrichWithConversions(new ProposedRecipeDto(
                 title, proposed.description(), proposed.servings(),
                 ingredients, finalPreparation, proposed.source(), proposed.tags(),
                 categoryId != null ? categoryId : DEFAULT_IMPORT_CATEGORY_ID,
-                null
-        );
+                null,
+                proposed.convertedIngredients()
+        ));
 
         var recipe = createRecipeFromProposal(merged, request.rawModelResponse());
         return Response.status(Response.Status.CREATED)
@@ -189,7 +195,8 @@ public class RecipeImportResource {
                 extraction.source(),
                 extraction.tags(),
                 null, // categoryId — set on confirm
-                null  // notes
+                null, // notes
+                null
         );
     }
 
@@ -205,7 +212,12 @@ public class RecipeImportResource {
 
         var recipe = new RecipeEntity();
         recipe.setTitle(proposal.title() != null ? proposal.title() : "Untitled Recipe");
-        recipe.setIngredients(proposal.ingredients() != null ? String.join("|", proposal.ingredients()) : "");
+        List<String> ingredients = proposal.ingredients() != null ? proposal.ingredients()
+                : proposal.convertedIngredients() != null
+                ? proposal.convertedIngredients().stream().map(IngredientConversion::displayValue).toList()
+                : List.of();
+
+        recipe.setIngredients(String.join("|", ingredients));
         recipe.setPreparation(proposal.preparation() != null ? proposal.preparation() : "");
         recipe.setCategory(category);
         recipe.setViewCount(0);
@@ -232,6 +244,26 @@ public class RecipeImportResource {
                 entity.getCategory().getId(),
                 entity.getCategory().getName(),
                 entity.getViewCount()
+        );
+    }
+
+    private ProposedRecipeDto enrichWithConversions(ProposedRecipeDto base) {
+        List<IngredientConversion> conversions = ingredientConverter.convertAll(base.ingredients());
+        List<String> displayIngredients = !conversions.isEmpty()
+                ? conversions.stream().map(IngredientConversion::displayValue).toList()
+                : (base.ingredients() != null ? base.ingredients() : List.of());
+
+        return new ProposedRecipeDto(
+                base.title(),
+                base.description(),
+                base.servings(),
+                displayIngredients,
+                base.preparation(),
+                base.source(),
+                base.tags(),
+                base.categoryId(),
+                base.notes(),
+                conversions
         );
     }
 }

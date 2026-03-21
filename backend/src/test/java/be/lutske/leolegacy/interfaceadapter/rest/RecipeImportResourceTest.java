@@ -70,6 +70,10 @@ class RecipeImportResourceTest {
                 .body("status", is("COMPLETE"))
                 .body("proposedRecipe.title", is("Chocolate Mousse"))
                 .body("proposedRecipe.ingredients.size()", is(3))
+                .body("proposedRecipe.ingredients[0]", is("7.1 oz (200 g) dark chocolate"))
+                .body("proposedRecipe.convertedIngredients[0].originalQuantity", is("200 g"))
+                .body("proposedRecipe.convertedIngredients[0].convertedQuantity", is("7.1 oz"))
+                .body("proposedRecipe.convertedIngredients[0].ingredientName", is("dark chocolate"))
                 .body("proposedRecipe.preparation", is(notNullValue()))
                 .body("rawModelResponse", is(notNullValue()))
                 .body("missingFields.size()", is(0));
@@ -123,6 +127,7 @@ class RecipeImportResourceTest {
                 .body("id", is(greaterThanOrEqualTo(1)))
                 .body("title", is("Test Recipe"))
                 .body("ingredients.size()", is(2))
+                .body("ingredients[0]", is("3.5 oz (100 g) flour"))
                 .body("preparation", is(notNullValue()));
     }
 
@@ -149,7 +154,8 @@ class RecipeImportResourceTest {
                 .then()
                 .statusCode(201)
                 .body("title", is("Corrected Title"))
-                .body("ingredients.size()", is(3));
+                .body("ingredients.size()", is(3))
+                .body("ingredients[0]", is("7.1 oz (200 g) chocolate"));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package be.lutske.leolegacy.interfaceadapter.rest;
 
+import be.lutske.leolegacy.application.service.IngredientConversion;
 import java.util.List;
 
 /**
@@ -24,7 +25,8 @@ public final class RecipeImportDtos {
             String source,
             List<String> tags,
             Long categoryId,
-            String notes
+            String notes,
+            List<IngredientConversion> convertedIngredients
     ) {}
 
     /**
