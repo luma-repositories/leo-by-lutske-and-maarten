@@ -22,7 +22,7 @@ public class RecipeParserService {
 
     private static final List<String> INGREDIENT_HEADINGS = List.of(
             "ingredients", "ingredienten", "benodigdheden", "wat heb je nodig",
-            "ingredient", "ingrediÃ«nten", "ingredienti"
+            "ingredient", "ingrediënten", "ingredienti"
     );
 
     private static final List<String> INSTRUCTION_HEADINGS = List.of(

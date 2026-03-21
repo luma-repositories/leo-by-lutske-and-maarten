@@ -1,6 +1,8 @@
 # Leo Legacy Recepten
 
-A full-stack recipe application migrating the legacy leo-legacy.be cooking website into a modern Java 25 + Quarkus backend with a React (TypeScript) frontend. The built frontend is bundled into the Quarkus application and served on a single port. Includes OCR-based recipe import from photos.
+A full-stack recipe application migrating the legacy leo-legacy.be cooking website into a modern Java 25 + Quarkus
+backend with a React (TypeScript) frontend. The built frontend is bundled into the Quarkus application and served on a
+single port. Includes OCR-based recipe import from photos.
 
 ## Prerequisites
 
@@ -8,7 +10,8 @@ A full-stack recipe application migrating the legacy leo-legacy.be cooking websi
 - **Node.js 18+** and **npm** (for the frontend build)
 - **Podman** (or Docker) for local PostgreSQL
 - **Tesseract OCR** (for recipe image import) — `brew install tesseract` on macOS  
-  Ensure the Italian trained data (`ita.traineddata`) is present in `tessdata` (package `tesseract-ocr-ita` on Debian/Ubuntu).
+  Ensure the Italian trained data (`ita.traineddata`) is present in `tessdata` (package `tesseract-ocr-ita` on
+  Debian/Ubuntu) and copy `ita/eng/nld` files into `backend/tessdata` (default datapath).
 - No global Gradle installation needed (uses Gradle wrapper)
 
 ## Installing Java 25 with SDKMAN
@@ -152,7 +155,9 @@ This starts a PostgreSQL 17 container on port 5432 with persistent volume.
 ./gradlew :backend:quarkusDev
 ```
 
-The Gradle build automatically builds the React frontend and bundles it into the Quarkus application. The full site (frontend + API) is served on [http://localhost:8080](http://localhost:8080). Flyway automatically runs database migrations on startup.
+The Gradle build automatically builds the React frontend and bundles it into the Quarkus application. The full site (
+frontend + API) is served on [http://localhost:8080](http://localhost:8080). Flyway automatically runs database
+migrations on startup.
 
 ### 3. Frontend development (optional — for hot reload)
 
@@ -175,7 +180,8 @@ This starts a Vite dev server on [http://localhost:3000](http://localhost:3000) 
 ./gradlew :backend:test     # tests only (uses H2 in-memory, no Docker needed)
 ```
 
-> **Note:** The `RecipeImportIntegrationTest` requires a running PostgreSQL (`podman compose up -d`) and Tesseract installed. It will fail fast (5s timeout) if PostgreSQL is unavailable.
+> **Note:** The `RecipeImportIntegrationTest` requires a running PostgreSQL (`podman compose up -d`) and Tesseract
+> installed. It will fail fast (5s timeout) if PostgreSQL is unavailable.
 
 ### Frontend only
 
@@ -188,22 +194,30 @@ npm run lint     # ESLint
 
 ## API Endpoints
 
-| Method | Path                          | Description                                                  |
-|--------|-------------------------------|--------------------------------------------------------------|
-| GET    | `/api/version`                | Application version as JSON                                  |
-| GET    | `/api/categories`             | All categories with recipe counts                            |
-| GET    | `/api/recipes`                | All recipes (optional `?categoryId=N` filter)                |
-| GET    | `/api/recipes/top`            | Top 10 most-viewed recipes                                   |
-| GET    | `/api/recipes/{id}`           | Full recipe detail (ingredients + preparation)               |
-| POST   | `/api/recipes/import`         | Upload image for OCR recipe import (multipart/form-data)     |
-| POST   | `/api/recipes/import/confirm` | Confirm and save an imported recipe with user corrections     |
+| Method | Path                          | Description                                               |
+|--------|-------------------------------|-----------------------------------------------------------|
+| GET    | `/api/version`                | Application version as JSON                               |
+| GET    | `/api/categories`             | All categories with recipe counts                         |
+| GET    | `/api/recipes`                | All recipes (optional `?categoryId=N` filter)             |
+| GET    | `/api/recipes/top`            | Top 10 most-viewed recipes                                |
+| GET    | `/api/recipes/{id}`           | Full recipe detail (ingredients + preparation)            |
+| POST   | `/api/recipes/import`         | Upload image for OCR recipe import (multipart/form-data)  |
+| POST   | `/api/recipes/import/confirm` | Confirm and save an imported recipe with user corrections |
 
 ### Example: GET /api/categories
 
 ```json
 [
-  { "id": 1, "name": "Aperitief hapjes", "recipeCount": 12 },
-  { "id": 2, "name": "Soepen", "recipeCount": 8 }
+  {
+    "id": 1,
+    "name": "Aperitief hapjes",
+    "recipeCount": 12
+  },
+  {
+    "id": 2,
+    "name": "Soepen",
+    "recipeCount": 8
+  }
 ]
 ```
 
@@ -213,7 +227,11 @@ npm run lint     # ESLint
 {
   "id": 1,
   "title": "Gevulde champignons",
-  "ingredients": ["250 g champignons", "100 g roomkaas", "..."],
+  "ingredients": [
+    "250 g champignons",
+    "100 g roomkaas",
+    "..."
+  ],
   "preparation": "Verwarm de oven op 200 graden...",
   "categoryId": 1,
   "categoryName": "Aperitief hapjes",
@@ -224,7 +242,8 @@ npm run lint     # ESLint
 ### Recipe Import Flow
 
 1. **Upload**: `POST /api/recipes/import` with an image (PNG/JPG/WEBP, max 10 MB)
-2. **OCR**: Tesseract extracts text (default language: Italian + English), parser attempts to identify title, ingredients, and preparation
+2. **OCR**: Tesseract extracts text (default: Italian; fallback to English then Dutch when no language is configured),
+   parser attempts to identify title, ingredients, and preparation
 3. **Response**: 201 (fully parsed + saved) or 422 (needs more info — returns proposed recipe + missing fields)
 4. **Confirm**: `POST /api/recipes/import/confirm` with proposed recipe + user overrides → 201 (saved)
 
@@ -239,16 +258,16 @@ npm run lint     # ESLint
 
 Key application properties (`backend/src/main/resources/application.properties`):
 
-| Property                              | Default                                          | Description                   |
-|---------------------------------------|--------------------------------------------------|-------------------------------|
-| `app.version`                         | `1.2.3`                                          | Application version           |
-| `quarkus.datasource.jdbc.url`         | `jdbc:postgresql://localhost:5432/leo_legacy`     | Database connection URL       |
-| `quarkus.datasource.username`         | `leo`                                            | Database username             |
-| `quarkus.datasource.password`         | `leo_secret`                                     | Database password             |
-| `quarkus.flyway.migrate-at-start`     | `true`                                           | Auto-run migrations           |
-| `ocr.tessdata-path`                   | `/usr/local/share/tessdata`                      | Tesseract data directory      |
-| `ocr.language`                        | `ita+eng`                                        | OCR language (Italian + English) |
-| `quarkus.http.limits.max-body-size`   | `10M`                                            | Max upload size               |
+| Property                            | Default                                       | Description                                       |
+|-------------------------------------|-----------------------------------------------|---------------------------------------------------|
+| `app.version`                       | `1.2.3`                                       | Application version                               |
+| `quarkus.datasource.jdbc.url`       | `jdbc:postgresql://localhost:5432/leo_legacy` | Database connection URL                           |
+| `quarkus.datasource.username`       | `leo`                                         | Database username                                 |
+| `quarkus.datasource.password`       | `leo_secret`                                  | Database password                                 |
+| `quarkus.flyway.migrate-at-start`   | `true`                                        | Auto-run migrations                               |
+| `ocr.tessdata-path`                 | `./tessdata`                                  | Tesseract data directory (filesystem path)        |
+| `ocr.language`                      | `ita` (unset → fallback)                      | OCR language; unset uses fallback ita → eng → nld |
+| `quarkus.http.limits.max-body-size` | `10M`                                         | Max upload size                                   |
 
 ## Tech Stack
 
