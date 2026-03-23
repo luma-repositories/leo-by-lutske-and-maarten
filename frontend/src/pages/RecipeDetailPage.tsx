@@ -11,8 +11,6 @@ export default function RecipeDetailPage() {
 
   useEffect(() => {
     if (!id) return;
-    setLoading(true);
-    setError(false);
     fetchRecipe(Number(id))
       .then(setRecipe)
       .catch(() => setError(true))

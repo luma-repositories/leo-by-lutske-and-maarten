@@ -8,12 +8,15 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
+
+import static java.lang.System.setProperty;
 
 /**
  * Service that wraps Tess4J to perform OCR on uploaded images with simple language fallback.
@@ -24,6 +27,25 @@ import java.util.function.Supplier;
  */
 @ApplicationScoped
 public class OcrService {
+
+    private static final String MACOS_HOMEBREW_LIB_PATH = "/opt/homebrew/lib";
+    private static final String LINUX_LIB_PATH = "/usr/local/lib";
+
+    private static void configureJnaLibraryPath() {
+        if (System.getProperty("jna.library.path") == null) {
+            File homebrewLib = new File(MACOS_HOMEBREW_LIB_PATH);
+            File linuxLib = new File(LINUX_LIB_PATH);
+            if (homebrewLib.exists()) {
+                setProperty("jna.library.path", MACOS_HOMEBREW_LIB_PATH);
+            } else if (linuxLib.exists()) {
+                setProperty("jna.library.path", LINUX_LIB_PATH);
+            }
+        }
+    }
+
+    static {
+        configureJnaLibraryPath();
+    }
 
     private static final Map<String, Set<String>> LANGUAGE_HINTS = Map.of(
             "ita", Set.of("il", "la", "di", "che", "per", "con", "una", "un", "gli",

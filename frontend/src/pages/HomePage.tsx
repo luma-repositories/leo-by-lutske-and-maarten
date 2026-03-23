@@ -11,7 +11,6 @@ export default function HomePage() {
   const categoryId = searchParams.get('categoryId');
 
   useEffect(() => {
-    setLoading(true);
     const fetcher = categoryId
       ? fetchRecipes(Number(categoryId))
       : fetchTopRecipes();
