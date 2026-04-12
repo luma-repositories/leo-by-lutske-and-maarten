@@ -1,0 +1,2 @@
+FROM gemma4
+PARAMETER num_ctx 32768

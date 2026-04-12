@@ -3,8 +3,34 @@ apply(from = "${rootProject.projectDir}/platform/quarkus-platform.gradle")
 
 plugins {
     java
-    id("io.quarkus")
+    id("io.quarkus") 
 }
+dependencies {
+    // Quarkus BOM — all Quarkus dependency versions are managed here
+    implementation(enforcedPlatform(libs["quarkusBom"]!!))
+    
+    // Quarkus extensions (versions managed by BOM)
+    implementation(libs["quarkusRest"]!!)
+    implementation(libs["quarkusRestJackson"]!!)
+    implementation(libs["quarkusArc"]!!)
+
+    // Database
+    implementation(libs["quarkusHibernateOrm"]!!)
+    implementation(libs["quarkusJdbcPostgresql"]!!)
+    implementation(libs["quarkusFlyway"]!!)
+
+    // LangChain4j — AI / LLM integration
+    implementation(libs["langchain4jOpenai"]!!)
+    implementation(libs["langchain4jAnthropic"]!!)
+    
+    // Testing
+    testImplementation(libs["quarkusJunit5"]!!)
+    testImplementation(libs["quarkusMockito"]!!)
+    testImplementation(libs["quarkusTestH2"]!!)
+    testImplementation(libs["restAssured"]!!)
+}
+
+
 
 repositories {
     mavenCentral()

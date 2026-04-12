@@ -1,43 +1,10 @@
-// =============================================================================
-// Centralized dependency version management for the Leo Legacy Quarkus project.
-// All dependency versions MUST be declared here.
-// Application modules reference versions via this platform file.
-// =============================================================================
-
-ext {
-    versions = [
-        // Quarkus
-        quarkus              : '3.32.2',
-
-        // LangChain4j (AI / LLM integration — plain library, not Quarkiverse extension)
-        langchain4j          : '1.0.0-beta2',
-
-        // Testing
-        restAssured          : '5.5.0',
-    ]
-
-    libs = [
-        // Quarkus BOM (imported as a platform in build.gradle.kts)
-        quarkusBom              : "io.quarkus.platform:quarkus-bom:${versions.quarkus}",
-
-        // Quarkus extensions
-        quarkusRest             : 'io.quarkus:quarkus-rest',
-        quarkusRestJackson      : 'io.quarkus:quarkus-rest-jackson',
-        quarkusArc              : 'io.quarkus:quarkus-arc',
-
-        // Database
-        quarkusHibernateOrm     : 'io.quarkus:quarkus-hibernate-orm-panache',
-        quarkusJdbcPostgresql   : 'io.quarkus:quarkus-jdbc-postgresql',
-        quarkusFlyway           : 'io.quarkus:quarkus-flyway',
-
-        // LangChain4j — AI model providers (plain library, not Quarkiverse)
-        langchain4jOpenai       : "dev.langchain4j:langchain4j-open-ai:${versions.langchain4j}",
-        langchain4jAnthropic    : "dev.langchain4j:langchain4j-anthropic:${versions.langchain4j}",
-
-        // Testing
-        quarkusJunit5           : 'io.quarkus:quarkus-junit5',
-        quarkusMockito          : 'io.quarkus:quarkus-junit5-mockito',
-        quarkusTestH2           : 'io.quarkus:quarkus-jdbc-h2',
-        restAssured             : "io.rest-assured:rest-assured:${versions.restAssured}",
-    ]
-}
+id("io.quarkus") version "${versions.quarkus}"
+id("io.quarkus.resteasy.reactive") version "${versions.quarkus}"
+id("io.quarkus.resteasy.reactive.jackson") version "${versions.quarkus}"
+id("io.quarkus.hibernate-orm") version "${versions.quarkus}"
+id("io.quarkus.jdbc-postgresql") version "${versions.quarkus}"
+id("io.quarkus.flyway") version "${versions.quarkus}"
+id("io.quarkus.resteasy-reactive-jackson") version "${versions.quarkus}"
+id("io.quarkus.resteasy") version "${versions.quarkus}"
+id("io.quarkus.arc") version "${versions.quarkus}"
+id("io.quarkus.arc")
