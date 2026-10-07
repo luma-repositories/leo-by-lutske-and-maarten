@@ -31,6 +31,23 @@
           }
         }
       }
+    },
+    "ollama-local": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama Local",
+      "options": {
+        "baseURL": "http://localhost:11434/v1",
+        "apiKey": "ollama"
+      },
+      "models": {
+        "gemma4:3b": {
+          "name": "Gemma 4 3B",
+          "options": {
+            "max_tokens": 8192,
+            "temperature": 0.1
+          }
+        }
+      }
     }
   },
   "model": "redhat-openshift-vllm/deepseek-r1-distill-qwen-14b"
