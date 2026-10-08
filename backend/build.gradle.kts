@@ -36,6 +36,10 @@ dependencies {
     testImplementation(libs["quarkusMockito"]!!)
     testImplementation(libs["quarkusTestH2"]!!)
     testImplementation(libs["restAssured"]!!)
+
+    // Core module dependencies
+    implementation(project(":core:domain"))
+    implementation(project(":core:usecases"))
 }
 
 group = "be.lutske"

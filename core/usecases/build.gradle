@@ -1,0 +1,30 @@
+plugins {
+    id 'java-library'
+}
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+    options.compilerArgs.add('-parameters')
+}
+
+dependencies {
+    // Usecases declares api dependency on domain because its public contracts expose domain types
+    api project(':core:domain')
+    testImplementation project(':core:domain')
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.withType(Test) {
+    useJUnitPlatform()
+}

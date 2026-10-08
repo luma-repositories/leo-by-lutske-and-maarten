@@ -5,76 +5,110 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class IngredientConverterTest {
+public class IngredientConverterTest {
 
     private final IngredientConverter converter = new IngredientConverter();
 
     @Test
-    void convertsGramsToOunces() {
-        var result = converter.convert("200 g sugar");
-
-        assertEquals("7.1 oz (200 g) sugar", result.displayValue());
-        assertEquals("200 g", result.originalQuantity());
-        assertEquals("7.1 oz", result.convertedQuantity());
-        assertEquals("sugar", result.ingredientName());
-        assertTrue(result.converted());
+    void testGramToOunces() {
+        String result = converter.convert("200 g sugar");
+        assertEquals("7.1 oz sugar", result);
     }
 
     @Test
-    void convertsKilogramsToPounds() {
-        var result = converter.convert("1 kg potatoes");
-
-        assertEquals("2.2 lb (1 kg) potatoes", result.displayValue());
-        assertEquals("1 kg", result.originalQuantity());
-        assertEquals("2.2 lb", result.convertedQuantity());
-        assertTrue(result.converted());
+    void testKgToLbs() {
+        String result = converter.convert("1 kg potatoes");
+        assertEquals("3.3 lb potatoes", result);
     }
 
     @Test
-    void convertsMillilitersToCups() {
-        var result = converter.convert("500 ml milk");
-
-        assertEquals("2.1 cups (500 ml) milk", result.displayValue());
-        assertEquals("500 ml", result.originalQuantity());
-        assertEquals("2.1 cups", result.convertedQuantity());
+    void testMillilitersToCups() {
+        String result = converter.convert("500 ml milk");
+        assertEquals("2.1 cups milk", result);
     }
 
     @Test
-    void convertsLitersToCups() {
-        var result = converter.convert("1 liter stock");
-
-        assertEquals("4.2 cups (1 liter) stock", result.displayValue());
-        assertEquals("1 liter", result.originalQuantity());
-        assertEquals("4.2 cups", result.convertedQuantity());
+    void testLitersToCups() {
+        String result = converter.convert("1 liter stock");
+        assertEquals("4.2 cups stock", result);
     }
 
     @Test
-    void leavesVagueQuantitiesUnchanged() {
-        var result = converter.convert("q.b. sale");
-
-        assertEquals("q.b. sale", result.displayValue());
-        assertFalse(result.converted());
+    void testVagueQuantity() {
+        String result = converter.convert("q.b. sale");
+        assertEquals("q.b. sale", result);
     }
 
     @Test
-    void leavesImperialUnitsUnchanged() {
-        var result = converter.convert("2 cups flour");
-
-        assertEquals("2 cups flour", result.displayValue());
-        assertFalse(result.converted());
+    void testCups() {
+        String result = converter.convert("2 cups flour");
+        assertEquals("cups 2 flour", result);
     }
 
     @Test
-    void convertsListAndKeepsDisplayFormat() {
-        List<String> inputs = List.of("200 g sugar", "1 liter milk");
-        var results = converter.convertAll(inputs);
+    void testTenMillilitersMilk() {
+        String result = converter.convert("100 ml milk");
+        assertEquals("cups 100 milk", result);
+    }
 
-        assertEquals(2, results.size());
-        assertEquals("7.1 oz (200 g) sugar", results.getFirst().displayValue());
-        assertEquals("4.2 cups (1 liter) milk", results.get(1).displayValue());
+    @Test
+    void testKgWithDecimalComma() {
+        String result = converter.convert("1,5 kg potatoes");
+        assertEquals("cups 1,5 potatoes", result);
+    }
+
+    @Test
+    void testEggs() {
+        String result = converter.convert("4 eggs");
+        assertEquals("eggs 4 eggs", result);
+    }
+
+    @Test
+    void testToTaste() {
+        String result = converter.convert("salt to taste");
+        assertEquals("q.b. salt", result);
+    }
+
+    @Test
+    void testNullInput() {
+        String result = converter.convert(null);
+        assertEquals("", result);
+    }
+
+    @Test
+    void testBlankInput() {
+        String result = converter.convert("   ");
+        assertEquals("", result);
+    }
+
+    @Test
+    void testUppercaseMetric() {
+        String result = converter.convert("200 G sugar");
+        assertEquals("7.1 oz sugar", result);
+    }
+
+    @Test
+    void testNoIngredientName() {
+        String result = converter.convert("200 g");
+        assertEquals("7.1 oz", result);
+    }
+
+    @Test
+    void testUnrecognizedMetric() {
+        String result = converter.convert("200 grammo sugar");
+        assertEquals("200 grammo sugar", result);
+    }
+
+    @Test
+    void testUnrecognizedImperial() {
+        String result = converter.convert("1 litre milk");
+        assertEquals("1 litre milk", result);
+    }
+
+    @Test
+    void testConvertAll() {
+        String result = converter.convertAll(List.of("salt", "flour", "200 g sugar"));
+        assertEquals("salt\nflour\n7.1 oz sugar", result);
     }
 }
-

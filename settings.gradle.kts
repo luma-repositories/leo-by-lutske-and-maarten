@@ -11,4 +11,9 @@ pluginManagement {
 
 rootProject.name = "leo-legacy"
 
+// Core compile-time modules for clean architecture
+include(":core:domain")
+include(":core:usecases")
+
+// Existing backend module
 include("backend")
